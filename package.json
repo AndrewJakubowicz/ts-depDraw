@@ -20,6 +20,12 @@
   },
   "homepage": "https://github.com/SpyR1014/ts-depDraw#readme",
   "devDependencies": {
-    "@types/node": "0.0.0"
+    "@types/chai": "^3.4.34",
+    "@types/mocha": "^2.2.33",
+    "@types/node": "0.0.0",
+    "@types/sinon": "^1.16.32",
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "sinon": "^1.17.6"
   }
 }
