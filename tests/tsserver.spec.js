@@ -2,7 +2,7 @@ var chai = require("chai");
 var sinon = require("sinon");
 var expect = chai.expect;
 
-var tss = require("../lib/src/tsserverWrap");
+var tss = require("../lib/tsserverWrap");
 
 describe('Basic uses of a tsserver', function() {
     let s = new tss.Tsserver();

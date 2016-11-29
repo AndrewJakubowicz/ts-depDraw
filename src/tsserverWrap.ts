@@ -1,6 +1,8 @@
 import * as child_process from "child_process";
 
-
+/**
+ * Wrapper for tsserver.
+ */
 export class Tsserver{
     private proc: child_process.ChildProcess;
     private operations: ((s: string | Buffer)=>void)[] = [];
@@ -23,6 +25,11 @@ export class Tsserver{
             console.log(`QUIT: ${code}`);
         });
     }
+    /**
+     * Allows go to definition using tsserver.
+     * 
+     * If you don't open the file before trying to find definitions in it, this will fail.
+     */
     definition(filePath:string, line: number, column: number, callback: (response: string )=> void) {
         this.proc.stdin.write(`{"seq":${this.seq},"type":"quickinfo","command":"definition","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`);
         this.operations.push(callback);
