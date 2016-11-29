@@ -29,18 +29,16 @@ describe('Basic use of definition', function(){
     var captured = "";
     before(function(done){
         this.timeout(4000);
-        s.open("examples/ex1.ts", function(d) {
+        s.open("tests/examples/ex1.ts", function(d) {
             captured += d.toString();
         });
-        s.definition('examples/ex1.ts', 1, 23, function(d){
+        s.definition('tests/examples/ex1.ts', 1, 14, function(d){
             console.log("Reading definition")
             captured += d.toString();
             done()
         });
     });
-    // TODO: fix this test.
     it('Simple definition matches', function(){
-        console.log(captured);
-        expect(2).to.eq(1);
+        expect(captured).to.eq('Content-Length: 143\r\n\r\n{"seq":0,"type":"event","event":"configFileDiag","body":{"triggerFile":"tests/examples/ex1.ts","configFile":"tsconfig.json","diagnostics":[]}}\nContent-Length: 249\r\n\r\n{"seq":0,"type":"response","command":"definition","request_seq":1,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2111,"offset":1},"end":{"line":2610,"offset":2}}]}\n');
     });
 });
