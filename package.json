@@ -1,0 +1,25 @@
+{
+  "name": "ts-depdraw",
+  "version": "0.0.1",
+  "description": "Visualisation of typescript project dependencies.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SpyR1014/ts-depDraw.git"
+  },
+  "author": "Andrew Jakubowicz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SpyR1014/ts-depDraw/issues"
+  },
+  "homepage": "https://github.com/SpyR1014/ts-depDraw#readme",
+  "devDependencies": {
+    "@types/node": "0.0.0"
+  }
+}
