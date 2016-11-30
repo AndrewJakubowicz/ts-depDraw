@@ -56,7 +56,7 @@ export function scanFile(filePath: string, callback: (err: Error, locations: str
         // Arguments are all here in arguments[0], arguments[1].....
         // Thank you: http://stackoverflow.com/a/10004137
         for (let i = 0; i < arguments.length; i++){
-            results += arguments[i];
+            results.push(arguments[i]);
         }
         callback(null, results);
     }, function(err){
