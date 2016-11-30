@@ -82,8 +82,8 @@ export function scanFile(filePath: string, callback: (err: Error, locations: str
         return new Promise<string | Buffer>(function(fulfill, reject){
             // Functions source located: https://github.com/Microsoft/TypeScript/blob/master/src/compiler/scanner.ts#L362
             let {line, character} = ts.getLineAndCharacterOfPosition(fileSourceFile, tokenPos);
-            console.log(line + 1, character);
-            tsserver.definition(filePath, line + 1, character + 2, function(err, res){
+            console.log(line, character);
+            tsserver.definition(filePath, line, character, function(err, res){
                 if (err) reject(err);
                 else fulfill(res);
             });

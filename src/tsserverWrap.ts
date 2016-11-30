@@ -13,7 +13,7 @@ export class Tsserver{
         this.proc = child_process.spawn('tsserver');
 
         this.proc.stdout.on("data", d => {
-            // console.log(`OUT: ${d}`);
+            console.log(`OUT: ${d}`);
             let callback = this.operations.shift();
             callback(null, d);
         });
@@ -34,11 +34,13 @@ export class Tsserver{
      * If you don't open the file before trying to find definitions in it, this will fail.
      */
     definition(filePath:string, line: number, column: number, callback: (err: Error, response: string )=> void) {
+        console.log(this.seq);
         this.proc.stdin.write(`{"seq":${this.seq},"type":"quickinfo","command":"definition","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`);
         this.operations.push(callback);
         this.seq++;
     }
     open(filePath: string, callback: (err: Error, response: string )=> void){
+        console.log(this.seq);
         this.proc.stdin.write(`{"seq":${this.seq},"type":"request","command":"open","arguments":{"file":"${filePath}"}}\n`);
         this.operations.push(callback);
         this.seq++;
