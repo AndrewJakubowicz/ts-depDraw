@@ -19,8 +19,7 @@ describe('Basic uses of a tsserver', function() {
     })
     
     it("Open and Close the tsserver", function() {
-        // s.proc.stdin.write(`{"seq":1,"type":"request","command":"open","arguments":{"file":"tests/examples/ex1.ts"}}\n`);
-        expect(captured).to.eq('Content-Length: 105\r\n\r\n{"seq":0,"type":"event","event":"configFileDiag","body":{"configFile":"tsconfig.json","diagnostics":[]}}\n')
+        expect(captured).to.eq('{"seq":0,"type":"event","event":"configFileDiag","body":{"configFile":"tsconfig.json","diagnostics":[]}}');
     })
     after(()=>{
         setTimeout(()=>{s.kill();}, 3000);
