@@ -9,8 +9,9 @@ describe('Basic uses of a tsserver', function() {
     var captured = "";
     before(function(done){
         this.timeout(4000);
-        s.open("tests/examples/ex1.ts", function(d) {
+        s.open("tests/examples/ex1.ts", function(err, d) {
             captured = d.toString();
+            console.log(captured);
             done()
         });
     })
@@ -29,10 +30,10 @@ describe('Basic use of definition', function(){
     var captured = "";
     before(function(done){
         this.timeout(4000);
-        s.open("tests/examples/ex1.ts", function(d) {
+        s.open("tests/examples/ex1.ts", function(err, d) {
             captured += d.toString();
         });
-        s.definition('tests/examples/ex1.ts', 1, 14, function(d){
+        s.definition('tests/examples/ex1.ts', 1, 14, function(err, d){
             console.log("Reading definition")
             captured += d.toString();
             done()
