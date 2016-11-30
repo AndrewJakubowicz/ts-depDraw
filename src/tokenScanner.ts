@@ -6,7 +6,7 @@ import * as ts from "TypeScript";
 import {Tsserver} from "./tsserverWrap";
 
 export function scanFile(filePath: string, callback: (err: Error, locations: string[])=>void){
-    scanFileBetween(filePath, [null,null],  callback);
+    scanFileBetween(filePath, null,  callback);
 }
 
 
@@ -49,16 +49,18 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
 
     rl.on('line', function(line){
         lineNum ++;
-        let scanner = initScannerState(line);
-        let token = scanner.scan();
-        let tokenStart = scanner.getTokenPos();
-        while (token != ts.SyntaxKind.EndOfFileToken){
-            if (token === ts.SyntaxKind.Identifier){
-                // console.log(`${scanner.getTokenText()} at (${lineNum}, ${tokenStart + 1})`);
-                promises.push(lookUpDefinition(tssFilePath, tsserver,lineNum, tokenStart + 1));
+        if (!lineStartAndEnd || (lineStartAndEnd[0] < lineNum && lineStartAndEnd[1] > lineNum)){
+            let scanner = initScannerState(line);
+            let token = scanner.scan();
+            let tokenStart = scanner.getTokenPos();
+            while (token != ts.SyntaxKind.EndOfFileToken){
+                if (token === ts.SyntaxKind.Identifier){
+                    // console.log(`${scanner.getTokenText()} at (${lineNum}, ${tokenStart + 1})`);
+                    promises.push(lookUpDefinition(tssFilePath, tsserver,lineNum, tokenStart + 1));
+                }
+                token = scanner.scan();
+                tokenStart = scanner.getTokenPos();
             }
-            token = scanner.scan();
-            tokenStart = scanner.getTokenPos();
         }
     });
 
