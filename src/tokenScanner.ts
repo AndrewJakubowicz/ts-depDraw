@@ -5,10 +5,15 @@ import* as path from "path";
 import * as ts from "TypeScript";
 import {Tsserver} from "./tsserverWrap";
 
+export function scanFile(filePath: string, callback: (err: Error, locations: string[])=>void){
+    scanFileBetween(filePath, [null,null],  callback);
+}
+
+
 /**
  * Always takes file paths from root of project directory.
  */
-export function scanFile(filePath: string, callback: (err: Error, locations: string[])=>void){
+export function scanFileBetween(filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[])=>void){
     /**
      * Below code doesn't use root of directory as reference.
      * TODO: make sure this path reflects the root of the directory we are trying to traverse.
@@ -49,7 +54,7 @@ export function scanFile(filePath: string, callback: (err: Error, locations: str
         let tokenStart = scanner.getTokenPos();
         while (token != ts.SyntaxKind.EndOfFileToken){
             if (token === ts.SyntaxKind.Identifier){
-                console.log(`${scanner.getTokenText()} at (${lineNum}, ${tokenStart + 1})`);
+                // console.log(`${scanner.getTokenText()} at (${lineNum}, ${tokenStart + 1})`);
                 promises.push(lookUpDefinition(tssFilePath, tsserver,lineNum, tokenStart + 1));
             }
             token = scanner.scan();
