@@ -10,8 +10,10 @@ describe('Basic uses of a tsserver', function() {
     before(function(done){
         this.timeout(4000);
         s.open("tests/examples/ex1.ts", function(err, d) {
+            if (err){
+                throw new Error("Basic use of a tsserver failed:", err);
+            }
             captured = d.toString();
-            console.log(captured);
             done()
         });
     })
