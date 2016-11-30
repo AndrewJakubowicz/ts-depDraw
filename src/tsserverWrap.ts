@@ -65,4 +65,3 @@ export class Tsserver{
         this.proc.kill();
     }
 }
-JSON.parse
