@@ -5,6 +5,9 @@ import* as path from "path";
 import * as ts from "TypeScript";
 import {Tsserver} from "./tsserverWrap";
 
+/**
+ * Reads entire typeScript file.
+ */
 export function scanFile(filePath: string, callback: (err: Error, locations: string[])=>void){
     scanFileBetween(filePath, null,  callback);
 }
@@ -12,6 +15,8 @@ export function scanFile(filePath: string, callback: (err: Error, locations: str
 
 /**
  * Always takes file paths from root of project directory.
+ * 
+ * lineStartAndEnd: [number, number] and is inclusive.
  */
 export function scanFileBetween(filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[])=>void){
     /**
@@ -49,7 +54,7 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
 
     rl.on('line', function(line){
         lineNum ++;
-        if (!lineStartAndEnd || (lineStartAndEnd[0] < lineNum && lineStartAndEnd[1] > lineNum)){
+        if (!lineStartAndEnd || (lineStartAndEnd[0] <= lineNum && lineStartAndEnd[1] >= lineNum)){
             let scanner = initScannerState(line);
             let token = scanner.scan();
             let tokenStart = scanner.getTokenPos();
@@ -71,6 +76,8 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
             for (let i = 0; i < arguments.length; i++){
                 results.push(arguments[i]);
             }
+            tsserver.kill();
+            console.log(`RESULTS: ${results}`);
             callback(null, results);
         }, function(err){
             console.error(err);

@@ -34,7 +34,7 @@ export class Tsserver{
             let chunk = allData.shift();
             
             while (allData.length > 0){
-                // console.log(`Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`);
+                console.log(`Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`);
                 callback(null, chunk);
                 callback = this.operations.shift();
                 chunk = allData.shift();
