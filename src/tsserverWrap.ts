@@ -8,9 +8,15 @@ import * as child_process from "child_process";
 export class Tsserver{
     private proc: child_process.ChildProcess;
     private operations: ((err: Error, s: string | Buffer)=>void)[] = [];
-    private seq: number = 0;
+    private seq: number = 0;                                                // tsserver requires everything to have a sequence number.
+
+    /**
+     * Spawns tsserver singleton and awaits events.
+     */
     constructor(){
+
         this.proc = child_process.spawn('tsserver');
+
 
         /**
          * This has to be able to handle batch responses.
@@ -36,19 +42,28 @@ export class Tsserver{
             callback(null, chunk);
         });
 
+
+        /**
+         * Not actually sure if this will ever call.
+         * I think tsserver responds with success: false in the case of error.
+         */
         this.proc.stderr.on("data", d => {
             console.error(`ERR: ${d}`);
             let callback = this.operations.shift();
             callback(new Error(d.toString()), null);
         });
 
+
         this.proc.on('close', (err,code) => {
             console.log(`QUIT: ${code}`);
         });
     }
+
+
+
     /**
-     * Allows go to definition using tsserver.
-     * 
+     * Allows goto definition using tsserver.
+     * This will store a callback on the FIFO queue.
      * If you don't open the file before trying to find definitions in it, this will fail.
      */
     definition(filePath:string, line: number, column: number, callback: (err: Error, response: string )=> void) {
