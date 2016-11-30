@@ -45,6 +45,7 @@ describe("Single File Scan", function(){
 
 describe("Partial File Scan", function(){
     var response;
+    var response2;
     before(function(done){
         this.timeout(10000);
         tkScanner.scanFileBetween("tests/examples/ex1.ts", [1,9], (err, r)=>{
@@ -53,7 +54,16 @@ describe("Partial File Scan", function(){
             }
             console.log(r[0]);
             response = r[0].toString();
-            done();
+
+
+            tkScanner.scanFileBetween("tests/examples/ex1.ts", [1,1], (err, r)=>{
+                if (err) {
+                    console.error(err);
+                }
+                console.log('response2: ',r[0]);
+                response2 = r[0].toString();
+                done();
+            });
         });
     });
     it("Partial file scan", function(){
@@ -69,4 +79,8 @@ describe("Partial File Scan", function(){
     '{"seq":0,"type":"response","command":"definition","request_seq":10,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":7,"offset":16},"end":{"line":7,"offset":17}}]}',
     '{"seq":0,"type":"response","command":"definition","request_seq":11,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":7,"offset":18},"end":{"line":7,"offset":19}}]}' ].toString());
     });
+    
+    it("Single line scan", function(){
+        expect(response2).to.eql([ '{"seq":0,"type":"response","command":"definition","request_seq":1,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2111,"offset":1},"end":{"line":2610,"offset":2}}]}' ].toString());
+    })
 });
