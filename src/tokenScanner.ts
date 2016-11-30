@@ -1,9 +1,15 @@
 import * as fs from "fs";
 import * as readline from "readline";
 import* as path from "path";
+import * as winston from "winston";
 
 import * as ts from "TypeScript";
 import {Tsserver} from "./tsserverWrap";
+
+// Sets logging based on environmental variable.
+// TODO: replace static log level with changable one.
+// winston.level = process.env.LOG_LEVEL;
+winston.level = "verbose";
 
 /**
  * Reads entire typeScript file.
@@ -26,6 +32,7 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
      */
     let appDir = path.dirname(global.appRoot);
     filePath = appDir + '/' + filePath;
+    winston.log("verbose", `function scanFile trying to access ${filePath}`);
     let tssFilePath = filePath;
     if (!fs.existsSync(filePath)){
         callback(new Error(`File doesn't exist: ${filePath}`), null);

@@ -1,4 +1,10 @@
 import * as child_process from "child_process";
+import * as winston from "winston";
+
+// Sets logging based on environmental variable.
+// TODO: replace static log level with changable one.
+// winston.level = process.env.LOG_LEVEL;
+winston.level = "verbose";
 
 /**
  * Wrapper for tsserver.
@@ -14,7 +20,7 @@ export class Tsserver{
      * Spawns tsserver singleton and awaits events.
      */
     constructor(){
-
+        
         this.proc = child_process.spawn('tsserver');
 
 
@@ -23,18 +29,18 @@ export class Tsserver{
          * Therefore it splits up the response and then process them individually.
          */
         this.proc.stdout.on("data", d => {
-            // console.log(`OUT: ${d}`);
+            winston.log('verbose', `TSSERVER OUT: "${d}"`);
 
             // Split and filter out the stuff that isn't needed.
             let allData = d.toString().split(/\r\n|\n/).filter(v => {
                 return !(v === '' || v.slice(0, 14) === 'Content-Length')} );
 
-            // Grab first callback
-            let callback = this.operations.shift();
-            let chunk = allData.shift();
+            // Grab first callback and data.
+            let callback = this.operations.shift(),
+                chunk = allData.shift();
             
             while (allData.length > 0){
-                console.log(`Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`);
+                winston.log("debug", `Tsserver response: Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`);
                 callback(null, chunk);
                 callback = this.operations.shift();
                 chunk = allData.shift();
@@ -48,14 +54,14 @@ export class Tsserver{
          * I think tsserver responds with success: false in the case of error.
          */
         this.proc.stderr.on("data", d => {
-            console.error(`ERR: ${d}`);
+            winston.log("error", `TSSERVER ERR: ${d}`);
             let callback = this.operations.shift();
             callback(new Error(d.toString()), null);
         });
 
 
         this.proc.on('close', (err,code) => {
-            console.log(`QUIT: ${code}`);
+            winston.log("verbose", `TSSERVER QUIT: ${code}`);
         });
     }
 
@@ -67,16 +73,21 @@ export class Tsserver{
      * If you don't open the file before trying to find definitions in it, this will fail.
      */
     definition(filePath:string, line: number, column: number, callback: (err: Error, response: string )=> void) {
-        this.proc.stdin.write(`{"seq":${this.seq},"type":"quickinfo","command":"definition","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`);
+        let command = `{"seq":${this.seq},"type":"quickinfo","command":"definition","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`;
+        winston.log("debug", `SENDING TO TSSERVER: "${command}"`);
+        this.proc.stdin.write(command);
         this.operations.push(callback);
         this.seq++;
     }
     open(filePath: string, callback: (err: Error, response: string )=> void){
-        this.proc.stdin.write(`{"seq":${this.seq},"type":"request","command":"open","arguments":{"file":"${filePath}"}}\n`);
+        let command = `{"seq":${this.seq},"type":"request","command":"open","arguments":{"file":"${filePath}"}}\n`;
+        winston.log("debug", `SENDING TO TSSERVER: "${command}"`);
+        this.proc.stdin.write(command);
         this.operations.push(callback);
         this.seq++;
     }
     kill(){
+        winston.log("debug", `TSSERVER SENDING QUIT REQUEST`);
         this.proc.kill();
     }
 }

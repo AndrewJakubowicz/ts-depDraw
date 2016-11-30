@@ -24,11 +24,13 @@
     "@types/mocha": "^2.2.33",
     "@types/node": "0.0.0",
     "@types/sinon": "^1.16.32",
+    "@types/winston": "0.0.32",
     "chai": "^3.5.0",
     "mocha": "^3.2.0",
     "sinon": "^1.17.6"
   },
   "dependencies": {
-    "typescript": "^2.0.10"
+    "typescript": "^2.0.10",
+    "winston": "^2.3.0"
   }
 }

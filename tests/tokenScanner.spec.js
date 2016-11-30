@@ -24,6 +24,7 @@ describe("Single File Scan", function(){
             }
             console.log(r[0]);
             response = r[0].toString();
+            console.log(response);
             done();
         });
     });
