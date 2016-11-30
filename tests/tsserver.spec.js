@@ -35,12 +35,12 @@ describe('Basic use of definition', function(){
             captured += d.toString();
         });
         s.definition('tests/examples/ex1.ts', 1, 14, function(err, d){
-            console.log("Reading definition")
+            console.log("Reading definition", d);
             captured += d.toString();
             done()
         });
     });
     it('Simple definition matches', function(){
-        expect(captured).to.eq('Content-Length: 143\r\n\r\n{"seq":0,"type":"event","event":"configFileDiag","body":{"triggerFile":"tests/examples/ex1.ts","configFile":"tsconfig.json","diagnostics":[]}}\nContent-Length: 249\r\n\r\n{"seq":0,"type":"response","command":"definition","request_seq":1,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2111,"offset":1},"end":{"line":2610,"offset":2}}]}\n');
+        expect(captured).to.eq('{"seq":0,"type":"event","event":"configFileDiag","body":{"configFile":"tsconfig.json","diagnostics":[]}}{"seq":0,"type":"response","command":"definition","request_seq":1,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2111,"offset":1},"end":{"line":2610,"offset":2}}]}');
     });
 });
