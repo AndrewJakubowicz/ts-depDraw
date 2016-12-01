@@ -1,3 +1,6 @@
+/**
+ * Author: Andrew Jakubowicz
+ */
 import * as fs from "fs";
 import * as readline from "readline";
 import* as path from "path";
@@ -59,7 +62,7 @@ export function scanFile(filePath: string, callback: (err: Error, locations: str
  * 
  * lineStartAndEnd: [number, number] and is inclusive.
  * 
- * @parem 
+ * @parem {string[][]} locations is an array of tuples in the form [string, ]
  */
 export function scanFileBetween(filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[][])=>void){
     /**

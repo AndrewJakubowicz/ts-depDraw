@@ -1,3 +1,8 @@
+/**
+ * Author: Andrew Jakubowicz
+ * 
+ * This module exposes some of the funcitonality of the tsserver.
+ */
 import * as child_process from "child_process";
 import * as winston from "winston";
 
@@ -44,6 +49,7 @@ winston.add(winston.transports.Console, {
  * Wrapper for tsserver.
  * 
  * TODO: make sure tsserver responds sequentually. Otherwise we'll get confused definitions.
+ *          - TODO: This should be resolved downstream by comparing seq with req_seq.
  */
 export class Tsserver{
     private proc: child_process.ChildProcess;
