@@ -9,6 +9,15 @@ import * as winston from "./appLogger";
 import * as ts from "TypeScript";
 import {Tsserver} from "./tsserverWrap";
 
+/**
+ * Request body interface
+ * 
+ * The idea of this interface is to retain information about the token that the definition is called on.
+ */
+interface RequestBody {
+    token?: string;
+}
+
 
 /**
  * Reads entire typeScript file.
@@ -75,7 +84,8 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
             while (token != ts.SyntaxKind.EndOfFileToken){
                 if (token === ts.SyntaxKind.Identifier){
                     // Tokens seem to start with whitespace. Adding one allows the definition to be found.
-                    promises.push(lookUpDefinition(tssFilePath, tsserver,lineNum, tokenStart + 1));
+                    promises.push(lookUpDefinition(tssFilePath, tsserver,lineNum, tokenStart + 1,
+                        {token: scanner.getTokenText()}));
                 }
                 token = scanner.scan();
                 tokenStart = scanner.getTokenPos();
@@ -125,12 +135,26 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
      * Uses the filepath, sourceFile, tsserver and position to look up a definition.
      * Returns a promise.
      */
-    function lookUpDefinition(filePath: string, tsserver: Tsserver, lineNum:number, tokenPos: number){
+    function lookUpDefinition(filePath: string, tsserver: Tsserver, lineNum:number, tokenPos: number, reqBody: RequestBody){
         return new Promise<[string | Buffer, string]>(function(fulfill, reject){
             tsserver.definition(filePath, lineNum, tokenPos, function(err, res, req){
                 if (err) reject(err);
-                else fulfill([req, res]);
+                else fulfill([mergeRequestWithBody(req, reqBody), res]);
             });
         });
     }
+
+    /**
+     * This is the point at which we can add as much as we want to the request.
+     */
+    function mergeRequestWithBody(req: string, body: RequestBody): string{
+        let newReq = JSON.parse(req);
+        newReq.body = body;
+        return JSON.stringify(newReq);
+    }
 }
+
+
+/**
+ * Function that builds a structure that we can actually visualize and use to find more information.
+ */
