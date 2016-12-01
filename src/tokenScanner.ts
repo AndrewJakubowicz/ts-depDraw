@@ -3,11 +3,15 @@
  */
 import * as fs from "fs";
 import * as readline from "readline";
-import* as path from "path";
-import * as winston from "./appLogger";
+import * as path from "path";
 
 import * as ts from "TypeScript";
+
 import {Tsserver} from "./tsserverWrap";
+import * as winston from "./appLogger";
+
+// You can access the variables with config.maxDepth
+let config = require("../config.json");
 
 /**
  * Request body interface
@@ -113,7 +117,7 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
             // TODO: work out why we get a string[][][]!?
             callback(null, results[0]);
         }, function(err){
-            winston.log("error", `Promise resolve error: '${err}'`);
+            winston.error(`Promise resolve error: '${err}'`);
         });
     });
 
@@ -122,7 +126,7 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
         let scanner = ts.createScanner(ts.ScriptTarget.Latest, true);
         scanner.setText(text);
         scanner.setOnError((message, length)=>{
-            winston.log('error', `${message}`);
+            winston.error(`${message}`);
         });
         // TODO: match with users tsconfig.json
         scanner.setScriptTarget(ts.ScriptTarget.ES5);
@@ -158,3 +162,13 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
 /**
  * Function that builds a structure that we can actually visualize and use to find more information.
  */
+export function crawler(filePath: string, depth: number){
+    if (!config.maxDepth){
+        winston.error(`No maxDepth set in the config.json`);
+    }
+    if (depth >= config.maxDepth){
+        winston.log('debug', `Crawler finished.`);
+        return
+    }
+
+}
