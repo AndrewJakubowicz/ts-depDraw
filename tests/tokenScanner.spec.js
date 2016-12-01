@@ -1,6 +1,7 @@
 var chai = require("chai");
 var sinon = require("sinon");
 var expect = chai.expect;
+var winston = require("../lib/appLogger");
 
 var tkScanner = require("../lib/tokenScanner");
 
@@ -20,9 +21,9 @@ describe("Single File Scan", function(){
         this.timeout(10000);
         tkScanner.scanFile("tests/examples/ex1.ts", (err, r)=>{
             if (err) {
-                console.error(err);
+                winston.log('error', err);
             }
-            console.log(r[0]);
+            winston.log('data', r[0]);
             // We want just the responses from the tuples.
             response = r.map((currentRequestResponse) => { 
                 return currentRequestResponse[1]
@@ -54,9 +55,9 @@ describe("Partial File Scan", function(){
         this.timeout(10000);
         tkScanner.scanFileBetween("tests/examples/ex1.ts", [1,9], (err, r)=>{
             if (err) {
-                console.error(err);
+                winston.log('error', err);
             }
-            console.log(r[0]);
+            winston.log('data', r[0]);
             response = r.map((currentRequestResponse) => { 
                 return currentRequestResponse[1]
                 })
@@ -65,9 +66,9 @@ describe("Partial File Scan", function(){
 
             tkScanner.scanFileBetween("tests/examples/ex1.ts", [1,1], (err, r)=>{
                 if (err) {
-                    console.error(err);
+                    winston.log('error', err);
                 }
-                console.log('response2: ',r[0]);
+                winston.log('data',`response2: '${r[0]}'`);
                 response2 = r.map((currentRequestResponse) => { 
                     return currentRequestResponse[1]
                     })

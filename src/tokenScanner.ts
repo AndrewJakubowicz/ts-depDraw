@@ -4,50 +4,11 @@
 import * as fs from "fs";
 import * as readline from "readline";
 import* as path from "path";
-import * as winston from "winston";
+import * as winston from "./appLogger";
 
 import * as ts from "TypeScript";
 import {Tsserver} from "./tsserverWrap";
 
-// Sets logging based on environmental variable.
-// TODO: replace static log level with changable one.
-// winston.level = process.env.LOG_LEVEL;
-winston.level = "verbose";
-winston.setLevels({
-  trace: 0,
-  input: 1,
-  verbose: 2,
-  prompt: 3,
-  debug: 4,
-  info: 5,
-  data: 6,
-  help: 7,
-  warn: 8,
-  error: 9
-});
-
-winston.addColors({
-  trace: 'magenta',
-  input: 'grey',
-  verbose: 'cyan',
-  prompt: 'grey',
-  debug: 'blue',
-  info: 'green',
-  data: 'grey',
-  help: 'cyan',
-  warn: 'yellow',
-  error: 'red'
-});
-
-winston.remove(winston.transports.Console)
-winston.add(winston.transports.Console, {
-  level: 'trace',
-  prettyPrint: true,
-  colorize: true,
-  silent: false,
-  timestamp: false
-});
-// END WINSTON CONFIG
 
 /**
  * Reads entire typeScript file.
@@ -72,9 +33,10 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
      */
     let appDir = path.dirname(global.appRoot);
     filePath = appDir + '/' + filePath;
-    winston.log("verbose", `function scanFile trying to access ${filePath}`);
+    winston.log("debug", `function scanFile trying to access ${filePath}`);
     let tssFilePath = filePath;
     if (!fs.existsSync(filePath)){
+        winston.log("debug", `File doesn't exist: ${filePath}`);
         callback(new Error(`File doesn't exist: ${filePath}`), null);
         return;
     }
@@ -85,7 +47,7 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
     tsserver.open(filePath, function(err, response: string){
         // Probably want to check for success here.
         // TODO: add error handling.
-        console.log(`OPEN ${filePath}: ${response}`);
+        winston.log("verbose", `OPEN ${filePath}: ${response}`);
     });
 
 
@@ -99,6 +61,11 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
     
     let promises: Promise<String | Buffer>[] = [];
 
+    /**
+     * Setting up event to read the file.
+     * Todo: Populate a cache to prevent the same file getting read over and over.
+     *      - Important due to a single file containing many modules or namespaces.
+     */
     rl.on('line', function(line){
         lineNum ++;
         if (!lineStartAndEnd || (lineStartAndEnd[0] <= lineNum && lineStartAndEnd[1] >= lineNum)){
@@ -107,7 +74,7 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
             let tokenStart = scanner.getTokenPos();
             while (token != ts.SyntaxKind.EndOfFileToken){
                 if (token === ts.SyntaxKind.Identifier){
-                    // console.log(`${scanner.getTokenText()} at (${lineNum}, ${tokenStart + 1})`);
+                    // Tokens seem to start with whitespace. Adding one allows the definition to be found.
                     promises.push(lookUpDefinition(tssFilePath, tsserver,lineNum, tokenStart + 1));
                 }
                 token = scanner.scan();
@@ -116,29 +83,36 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
         }
     });
 
+    /**
+     * 
+     */
     rl.on('close', function(){
+        // Process promises after reading file has concluded.
         Promise.all(promises).then(function(){
-            // Arguments are all here in arguments[0], arguments[1].....
-            // Thank you: http://stackoverflow.com/a/10004137
-            
+            /**
+             * Arguments are all here in arguments[0], arguments[1].....
+             * Thank you: http://stackoverflow.com/a/10004137
+             */
             for (let i = 0; i < arguments.length; i++){
-                console.log(`ARGUMENTS: ${arguments[i]}`);
+                winston.log('silly', `ARGUMENTS: ${arguments[i]}`);
                 results.push(arguments[i]);
             }
             tsserver.kill();
-            console.log(`RESULTS: ${results}`);
+            winston.log('verbose', `RESULTS: ${results}`);
+            // Results somehow ends up as a type string[][][], with the first index being everything we want.
+            // TODO: work out why we get a string[][][]!?
             callback(null, results[0]);
         }, function(err){
-            console.error(err);
+            winston.log("error", `Promise resolve error: '${err}'`);
         });
-    })
+    });
 
     function initScannerState(text: string): ts.Scanner{
         // TODO: scanner matches tsconfig.
         let scanner = ts.createScanner(ts.ScriptTarget.Latest, true);
         scanner.setText(text);
         scanner.setOnError((message, length)=>{
-            console.error(message);
+            winston.log('error', `${message}`);
         });
         // TODO: match with users tsconfig.json
         scanner.setScriptTarget(ts.ScriptTarget.ES5);

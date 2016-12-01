@@ -4,46 +4,8 @@
  * This module exposes some of the funcitonality of the tsserver.
  */
 import * as child_process from "child_process";
-import * as winston from "winston";
+import * as winston from "./appLogger";
 
-// Sets logging based on environmental variable.
-// TODO: replace static log level with changable one.
-// winston.level = process.env.LOG_LEVEL;
-winston.level = "verbose";
-winston.setLevels({
-  trace: 0,
-  input: 1,
-  verbose: 2,
-  prompt: 3,
-  debug: 4,
-  info: 5,
-  data: 6,
-  help: 7,
-  warn: 8,
-  error: 9
-});
-
-winston.addColors({
-  trace: 'magenta',
-  input: 'grey',
-  verbose: 'cyan',
-  prompt: 'grey',
-  debug: 'blue',
-  info: 'green',
-  data: 'grey',
-  help: 'cyan',
-  warn: 'yellow',
-  error: 'red'
-});
-
-winston.remove(winston.transports.Console)
-winston.add(winston.transports.Console, {
-  level: 'trace',
-  prettyPrint: true,
-  colorize: true,
-  silent: false,
-  timestamp: false
-});
 
 /**
  * Wrapper for tsserver.
@@ -69,7 +31,7 @@ export class Tsserver{
          * Therefore it splits up the response and then process them individually.
          */
         this.proc.stdout.on("data", d => {
-            winston.log('verbose', `TSSERVER OUT: "${d}"`);
+            winston.log('debug', `TSSERVER OUT: "${d}"`);
 
             // Split and filter out the stuff that isn't needed.
             let allData = d.toString().split(/\r\n|\n/).filter(v => {
@@ -101,7 +63,7 @@ export class Tsserver{
 
 
         this.proc.on('close', (err,code) => {
-            winston.log("verbose", `TSSERVER QUIT: ${code}`);
+            winston.log("debug", `TSSERVER QUIT: ${code}`);
         });
     }
 
@@ -114,20 +76,20 @@ export class Tsserver{
      */
     definition(filePath:string, line: number, column: number, callback: (err: Error, response: string, request: string )=> void) {
         let command = `{"seq":${this.seq},"type":"quickinfo","command":"definition","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`;
-        winston.log("debug", `SENDING TO TSSERVER: "${command}"`);
+        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
         this.proc.stdin.write(command);
         this.operations.push([callback, command]);
         this.seq++;
     }
     open(filePath: string, callback: (err: Error, response: string, request: string )=> void){
         let command = `{"seq":${this.seq},"type":"request","command":"open","arguments":{"file":"${filePath}"}}\n`;
-        winston.log("debug", `SENDING TO TSSERVER: "${command}"`);
+        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
         this.proc.stdin.write(command);
         this.operations.push([callback, command]);
         this.seq++;
     }
     kill(){
-        winston.log("debug", `TSSERVER SENDING QUIT REQUEST`);
+        winston.log("data", `TSSERVER SENDING QUIT REQUEST`);
         this.proc.kill();
     }
 }
