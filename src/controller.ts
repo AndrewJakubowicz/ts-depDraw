@@ -12,10 +12,10 @@ import * as winston from "./appLogger";
 /**
  * Interface for the graph nodes.
  */
-interface DepNode {
-    file: string,
-    tokenText: string,
-    line: number,
-    offset: number
-}
+// interface DepNode {
+//     file: string,
+//     tokenText: string,
+//     line: number,
+//     offset: number
+// }
 
