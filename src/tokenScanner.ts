@@ -158,17 +158,3 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
     }
 }
 
-
-/**
- * Function that builds a structure that we can actually visualize and use to find more information.
- */
-export function crawler(filePath: string, depth: number){
-    if (!config.maxDepth){
-        winston.error(`No maxDepth set in the config.json`);
-    }
-    if (depth >= config.maxDepth){
-        winston.log('debug', `Crawler finished.`);
-        return
-    }
-
-}
