@@ -49,7 +49,7 @@ winston.add(winston.transports.Console, {
 /**
  * Reads entire typeScript file.
  */
-export function scanFile(filePath: string, callback: (err: Error, locations: string[])=>void){
+export function scanFile(filePath: string, callback: (err: Error, locations: string[][])=>void){
     scanFileBetween(filePath, null,  callback);
 }
 
@@ -58,8 +58,10 @@ export function scanFile(filePath: string, callback: (err: Error, locations: str
  * Always takes file paths from root of project directory.
  * 
  * lineStartAndEnd: [number, number] and is inclusive.
+ * 
+ * @parem 
  */
-export function scanFileBetween(filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[])=>void){
+export function scanFileBetween(filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[][])=>void){
     /**
      * Below code doesn't use root of directory as reference.
      * TODO: make sure this path reflects the root of the directory we are trying to traverse.
@@ -75,7 +77,7 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
     }
 
 
-    let results = [];
+    let results: string[][][] = [];
     let tsserver = new Tsserver();
     tsserver.open(filePath, function(err, response: string){
         // Probably want to check for success here.
@@ -115,12 +117,14 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
         Promise.all(promises).then(function(){
             // Arguments are all here in arguments[0], arguments[1].....
             // Thank you: http://stackoverflow.com/a/10004137
+            
             for (let i = 0; i < arguments.length; i++){
+                console.log(`ARGUMENTS: ${arguments[i]}`);
                 results.push(arguments[i]);
             }
             tsserver.kill();
             console.log(`RESULTS: ${results}`);
-            callback(null, results);
+            callback(null, results[0]);
         }, function(err){
             console.error(err);
         });
@@ -145,10 +149,10 @@ export function scanFileBetween(filePath: string, lineStartAndEnd: [number, numb
      * Returns a promise.
      */
     function lookUpDefinition(filePath: string, tsserver: Tsserver, lineNum:number, tokenPos: number){
-        return new Promise<string | Buffer>(function(fulfill, reject){
-            tsserver.definition(filePath, lineNum, tokenPos, function(err, res){
+        return new Promise<[string | Buffer, string]>(function(fulfill, reject){
+            tsserver.definition(filePath, lineNum, tokenPos, function(err, res, req){
                 if (err) reject(err);
-                else fulfill(res);
+                else fulfill([req, res]);
             });
         });
     }
