@@ -93,7 +93,18 @@ export class Tsserver{
      * If you don't open the file before trying to find definitions in it, this will fail.
      */
     definition(filePath:string, line: number, column: number, callback: (err: Error, response: string, request: string )=> void) {
-        let command = `{"seq":${this.seq},"type":"quickinfo","command":"definition","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`;
+        let command = `{"seq":${this.seq},"type":"request","command":"definition","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`;
+        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
+        this.proc.stdin.write(command);
+        this.operations.push([callback, command]);
+        this.seq++;
+    }
+
+    /**
+     * Returns a response showing what implements something.
+     */
+    implementation(filePath:string, line: number, column: number, callback: (err: Error, response: string, request: string )=> void) {
+        let command = `{"seq":${this.seq},"type":"request","command":"implementation","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`;
         winston.log("data", `SENDING TO TSSERVER: "${command}"`);
         this.proc.stdin.write(command);
         this.operations.push([callback, command]);

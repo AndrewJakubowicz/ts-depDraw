@@ -49,6 +49,21 @@ describe('Basic uses of a tsserver:', function() {
             done()
         });
     });
+
+    it("Simple implementation method", function(done){
+        var captured = "";
+        s.open('tests/examples/ex5.ts', function(err, d) {
+            if (err) {
+                throw new Error("Implementation method failed:", err);
+            }
+        });
+        s.implementation('tests/examples/ex5.ts', 7, 17, function(err, d){
+            captured = d.toString();
+            winston.log("error", captured);
+            done();
+        });
+        
+    })
 });
 
 describe("Single File Scan", function(){
@@ -84,6 +99,7 @@ describe("Single File Scan", function(){
     '{"seq":0,"type":"response","command":"definition","request_seq":11,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":7,"offset":18},"end":{"line":7,"offset":19}}]}' ].toString());
     });
 });
+
 
 describe("Partial File Scan", function(){
     before(function(done){

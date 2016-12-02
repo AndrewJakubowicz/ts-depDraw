@@ -1,5 +1,7 @@
 /**
  * Author: Andrew Jakubowicz
+ * 
+ * This file crawls and populates the graph in levelgraph
  */
 
 // These two modules don't have typings defined for them.
