@@ -45,21 +45,22 @@ describe('Basic uses of a tsserver:', function() {
             console.log("Reading definition", d);
             captured += d.toString();
 
-            expect(captured).to.eq('{"seq":0,"type":"event","event":"configFileDiag","body":{"configFile":"tsconfig.json","diagnostics":[]}}{"seq":0,"type":"response","command":"definition","request_seq":2,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2111,"offset":1},"end":{"line":2610,"offset":2}}]}');
+            expect(captured).to.eql('{"seq":0,"type":"event","event":"configFileDiag","body":{"configFile":"tsconfig.json","diagnostics":[]}}{"seq":0,"type":"response","command":"definition","request_seq":2,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2111,"offset":1},"end":{"line":2610,"offset":2}}]}');
             done()
         });
     });
 
-    it("Simple implementation method", function(done){
+    it("Simple references method", function(done){
         var captured = "";
-        s.open('tests/examples/ex5.ts', function(err, d) {
+        s.open('tests/examples/ex5.ts', function(err, d, req) {
             if (err) {
-                throw new Error("Implementation method failed:", err);
+                throw new Error("Reference method failed:", err);
             }
+            winston.log("error", req);
         });
-        s.implementation('tests/examples/ex5.ts', 7, 17, function(err, d){
+        s.references('tests/examples/ex5.ts', 7, 17, function(err, d, req){
             captured = d.toString();
-            winston.log("error", captured);
+            expect(captured).to.eql('{"seq":0,"type":"response","command":"references","request_seq":4,"success":true,"body":{"refs":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex3.ts","start":{"line":7,"offset":5},"lineText":"ex5.betterConsoleLog(adderTest(1, 2));","end":{"line":7,"offset":21},"isWriteAccess":false,"isDefinition":false},{"file":"tests/examples/ex5.ts","start":{"line":7,"offset":17},"lineText":"export function betterConsoleLog(a){","end":{"line":7,"offset":33},"isWriteAccess":true,"isDefinition":true}],"symbolName":"betterConsoleLog","symbolStartOffset":17,"symbolDisplayString":"function betterConsoleLog(a: any): void"}}');
             done();
         });
         

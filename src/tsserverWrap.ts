@@ -103,8 +103,8 @@ export class Tsserver{
     /**
      * Returns a response showing what implements something.
      */
-    implementation(filePath:string, line: number, column: number, callback: (err: Error, response: string, request: string )=> void) {
-        let command = `{"seq":${this.seq},"type":"request","command":"implementation","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`;
+    references(filePath:string, line: number, column: number, callback: (err: Error, response: string, request: string )=> void) {
+        let command = `{"seq":${this.seq},"type":"request","command":"references","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`;
         winston.log("data", `SENDING TO TSSERVER: "${command}"`);
         this.proc.stdin.write(command);
         this.operations.push([callback, command]);
