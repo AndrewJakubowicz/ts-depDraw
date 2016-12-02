@@ -38,3 +38,7 @@ jspm_packages
 
 # Mac stuff
 .DS_Store
+
+# Database
+levelgraph
+mydb

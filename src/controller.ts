@@ -6,7 +6,6 @@
 
 import * as ts from "TypeScript";
 
-import * as tokenScanner from "./tokenScanner";
 import * as winston from "./appLogger";
 
 /**
