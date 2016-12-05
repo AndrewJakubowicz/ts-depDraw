@@ -12,3 +12,7 @@ global.appRoot = path.resolve(__dirname);
 // Here I will require my app.
 // require("./lib/test.js");
 
+
+// Server testing
+require("./lib/server");
+
