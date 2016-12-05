@@ -3,9 +3,6 @@
  * 
  * My first attempt to put together a nodejs server.
  * 
- * Material used:
- *  - http://blog.modulus.io/build-your-first-http-server-in-nodejs
- * 
  */
 
 import * as http from 'http';
@@ -25,8 +22,9 @@ let server = express();
 // If this middleware fails, it will fall through to the next handler.
 server.use('/', express.static('static'));
 
-server.get('/hi', (req: express.Request, res: express.Response) => {
-    res.send(`RAR! Recieved connection from: ${req.url}`);
+// Simple api request
+server.get('/api/helloworld', (req: express.Request, res: express.Response) => {
+    res.send(`<p>Hello World!</p>`);
 });
 
 server.listen(PORT, (err) => {

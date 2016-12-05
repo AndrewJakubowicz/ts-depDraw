@@ -8,8 +8,6 @@ html, body, #screen {
     display: flex;
     display: -webkit-flex;
     flex-direction: row;
-    border: 10px;
-    border-color: lawngreen;
 }
 
 #code-box, #dep-diagram {
@@ -21,8 +19,10 @@ html, body, #screen {
 
 #code-box {
     background-color: blue;
+    padding: 5px;
 }
 
 #dep-diagram {
     background-color: red;
+    padding: 5px;
 }
