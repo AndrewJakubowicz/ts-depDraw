@@ -12,17 +12,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 init();
 function init() {
     return __awaiter(this, void 0, void 0, function* () {
+        var filePath;
+        // We want the base files text!
         yield makeRequest('/api/getFileText')
             .then(function (val) {
-            var domCode = document.getElementById("code-text-box");
             var getFileTextRequest = JSON.parse(val);
-            domCode.innerText = getFileTextRequest.text;
+            updateCodeOnPage(getFileTextRequest.text);
             document.getElementById('code-file-title').innerText = getFileTextRequest.file;
+            // Save the filePath returned to use with future functions.
+            filePath = getFileTextRequest.file;
         })
             .catch(function (err) { return console.error(err); });
+        // Now we want to highlight the words that might have definitions attached to them.
+        // This call will return a json object that specifies line number, offset and length
+        // of identifier.
+        yield makeRequest('/api/getIdentifierTokens', { filePath: filePath })
+            .then(function (res) {
+        });
     });
 }
 /**
+ * makeRequest is a helper function that calls a url.
  * Code adapted from: http://stackoverflow.com/a/30008115
  */
 function makeRequest(url, params) {
@@ -58,4 +68,8 @@ function makeRequest(url, params) {
         };
         xhr.send();
     });
+}
+// NewLine before text preserves formatting.
+function updateCodeOnPage(textData) {
+    document.getElementById("code-text-box").innerText = '\n' + textData;
 }

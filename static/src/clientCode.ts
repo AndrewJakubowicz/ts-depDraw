@@ -4,21 +4,34 @@
  */
 init();
 
+
 async function init() {
+    let filePath: string;
+    // We want the base files text!
     await makeRequest('/api/getFileText')
         .then((val: string) => {
-            let domCode = document.getElementById("code-text-box");
             let getFileTextRequest = JSON.parse(val);
-
-            domCode.innerText = getFileTextRequest.text;
+            updateCodeOnPage(getFileTextRequest.text)
             document.getElementById('code-file-title').innerText = getFileTextRequest.file;
+            // Save the filePath returned to use with future functions.
+            filePath = getFileTextRequest.file;
 
         })
         .catch(err => console.error(err));
+    
+
+    // Now we want to highlight the words that might have definitions attached to them.
+    // This call will return a json object that specifies line number, offset and length
+    // of identifier.
+    await makeRequest('/api/getIdentifierTokens', {filePath: filePath})
+        .then((res: string) => {
+
+        });
 }
 
 
 /**
+ * makeRequest is a helper function that calls a url.
  * Code adapted from: http://stackoverflow.com/a/30008115
  */
 function makeRequest(url, params?: Object) {
@@ -59,4 +72,9 @@ function makeRequest(url, params?: Object) {
 
         xhr.send();
     });
+}
+
+// NewLine before text preserves formatting.
+function updateCodeOnPage(textData: string){
+    document.getElementById("code-text-box").innerText = '\n' + textData;
 }

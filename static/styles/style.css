@@ -18,11 +18,16 @@ html, body, #screen {
 }
 
 #code-box {
-    background-color: blue;
+    background-color: #7777a0;
     padding: 5px;
 }
 
 #dep-diagram {
     background-color: red;
+    padding: 5px;
+}
+
+pre {
+    background-color: #a0a0ff;
     padding: 5px;
 }
