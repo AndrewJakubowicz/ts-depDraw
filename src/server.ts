@@ -26,6 +26,18 @@ server.get('/api/helloworld', (req: express.Request, res: express.Response) => {
     res.send(`Hello World!`);
 });
 
+server.get('/api/getJSONtest', (req: express.Request, res: express.Response) => {
+    let testObject = {
+        name: "Andrew",
+        score: 2,
+        friends: {
+            names: "bob",
+            inventory: ["apples", "bananana"]
+        }
+    }
+    res.send(JSON.stringify(testObject));
+});
+
 server.listen(PORT, (err) => {
     if (err) {
         return console.log(`Error starting server: ${err}`);

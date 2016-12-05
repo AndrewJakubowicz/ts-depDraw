@@ -12,9 +12,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 init();
 function init() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield makeRequest('/api/helloworld')
+        yield makeRequest('/api/getJSONtest')
             .then(function (val) {
-            alert(val);
+            alert(JSON.parse(val).name);
         })
             .catch(function (err) { return console.error(err); });
     });

@@ -5,9 +5,9 @@
 init();
 
 async function init() {
-    await makeRequest('/api/helloworld')
-        .then(val => {
-            alert(val);
+    await makeRequest('/api/getJSONtest')
+        .then((val: string) => {
+            alert(JSON.parse(val).name);
         })
         .catch(err => console.error(err));
 }
