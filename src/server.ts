@@ -23,7 +23,7 @@ server.use('/', express.static('static'));
 
 // Simple api request
 server.get('/api/helloworld', (req: express.Request, res: express.Response) => {
-    res.send(`<p>Hello World!</p>`);
+    res.send(`Hello World!`);
 });
 
 server.listen(PORT, (err) => {
