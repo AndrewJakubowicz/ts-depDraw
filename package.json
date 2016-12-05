@@ -21,6 +21,7 @@
   "homepage": "https://github.com/SpyR1014/ts-depDraw#readme",
   "devDependencies": {
     "@types/chai": "^3.4.34",
+    "@types/express": "^4.0.34",
     "@types/mocha": "^2.2.33",
     "@types/node": "0.0.0",
     "@types/sinon": "^1.16.32",
@@ -30,6 +31,7 @@
     "sinon": "^1.17.6"
   },
   "dependencies": {
+    "express": "^4.14.0",
     "typescript": "^2.1.1",
     "winston": "^2.3.0"
   }
