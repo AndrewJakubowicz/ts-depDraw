@@ -250,9 +250,7 @@ export class Tsserver {
                 // Results somehow ends up as a type string[][][], with the first index being everything we want.
                 // TODO: work out why we get a string[][][]!?
                 callback(null, results[0]);
-            }, function (err) {
-                winston.error(`Promise resolve error: '${err}'`);
-            });
+            }).catch(err => { winston.log("error", `Promise error: ${err}`)});
         });
 
     }
