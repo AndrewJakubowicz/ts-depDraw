@@ -31,6 +31,17 @@ server.use('/', express.static('static'));
  * Default:
  *  If there is no fileName supplied, the api responds with the config.rootFile
  *  filePath.
+ * 
+ * This cannot just return plain text. This returns a list of all the text.
+ * This text is lumped with an object.
+ * Each token has this shape:
+ *      - tokenText
+ *      - tokenType
+ *      - start
+ *          - line and offset
+ *      - end
+ *          - line and offset
+ *      - isDefinition
  */
 server.get('/api/getFileText', (req: express.Request, res: express.Response) => {
     winston.log('data', `Query for getFileText from url: ${req.url}`);
