@@ -5,22 +5,35 @@
 init();
 
 async function init() {
-    await makeRequest('/api/getJSONtest')
+    await makeRequest('/api/getFileText')
         .then((val: string) => {
-            alert(JSON.parse(val).name);
+            alert(val);
         })
         .catch(err => console.error(err));
 }
 
 
 /**
- * Code from: http://stackoverflow.com/a/30008115
- * Thank you.
+ * Code adapted from: http://stackoverflow.com/a/30008115
  */
-function makeRequest(url) {
+function makeRequest(url, params?: Object) {
     return new Promise((resolve, reject) => {
+
+        /**
+         * Set up the parameters so they can be passed into api call.
+         */
+        let stringParams = '';
+        if (params && typeof params == "object"){
+            stringParams = Object.keys(params).map(function(key) {
+                return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+            }).join('&');
+        }
+
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+        xhr.open("GET", url + '?' + stringParams);
+
+        xhr.setRequestHeader('Content-Type','application/json');
+
         xhr.onload = function() {
             if (this.status >= 200 && this.status < 300){
                 resolve(xhr.response);

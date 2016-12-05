@@ -12,21 +12,30 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 init();
 function init() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield makeRequest('/api/getJSONtest')
+        yield makeRequest('/api/getFileText')
             .then(function (val) {
-            alert(JSON.parse(val).name);
+            alert(val);
         })
             .catch(function (err) { return console.error(err); });
     });
 }
 /**
- * Code from: http://stackoverflow.com/a/30008115
- * Thank you.
+ * Code adapted from: http://stackoverflow.com/a/30008115
  */
-function makeRequest(url) {
+function makeRequest(url, params) {
     return new Promise(function (resolve, reject) {
+        /**
+         * Set up the parameters so they can be passed into api call.
+         */
+        var stringParams = '';
+        if (params && typeof params == "object") {
+            stringParams = Object.keys(params).map(function (key) {
+                return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+            }).join('&');
+        }
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
+        xhr.open("GET", url + '?' + stringParams);
+        xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
                 resolve(xhr.response);

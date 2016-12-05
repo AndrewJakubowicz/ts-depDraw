@@ -11,9 +11,6 @@ import * as ts from "TypeScript";
 import * as child_process from "child_process";
 import * as winston from "./appLogger";
 
-// You can access the variables with config.maxDepth
-let config = require("../config.json");
-
 
 /**
  * methods fileScanner accepts
