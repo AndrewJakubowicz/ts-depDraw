@@ -7,7 +7,12 @@ init();
 async function init() {
     await makeRequest('/api/getFileText')
         .then((val: string) => {
-            alert(val);
+            let domCode = document.getElementById("code-text-box");
+            let getFileTextRequest = JSON.parse(val);
+
+            domCode.innerText = getFileTextRequest.text;
+            document.getElementById('code-file-title').innerText = getFileTextRequest.file;
+
         })
         .catch(err => console.error(err));
 }

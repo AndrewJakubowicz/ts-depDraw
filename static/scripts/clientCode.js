@@ -14,7 +14,10 @@ function init() {
     return __awaiter(this, void 0, void 0, function* () {
         yield makeRequest('/api/getFileText')
             .then(function (val) {
-            alert(val);
+            var domCode = document.getElementById("code-text-box");
+            var getFileTextRequest = JSON.parse(val);
+            domCode.innerText = getFileTextRequest.text;
+            document.getElementById('code-file-title').innerText = getFileTextRequest.file;
         })
             .catch(function (err) { return console.error(err); });
     });
