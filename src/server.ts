@@ -35,13 +35,17 @@ server.use('/', express.static('static'));
 server.get('/api/getFileText', (req: express.Request, res: express.Response) => {
     winston.log('data', `Query for getFileText from url: ${req.url}`);
 
+    let fileTextResponse: GetFileText;
+
+    /** If filePath exists then lookup that files text. */
     if (req.query.hasOwnProperty('filePath')){
-        // Fulfill query providing text for the requested file.
-        let fileTextResponse = {
+        fileTextResponse = {
             file: req.query["filePath"],
             text: "Example Text so far!"
         }
+
         res.status(200).send(JSON.stringify(fileTextResponse));
+
     } else {
         // Optimistically assume they want root text.
         fs.readFile(config.rootFile, 'utf8', function(err, data){
@@ -49,10 +53,12 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
                 winston.log('error', `Default getFileText failed with ${err}`);
                 res.status(500).send('Unable to get root file text!');
             }
-            let fileTextResponse = {
+            
+            fileTextResponse = {
                 file: config.rootFile,
                 text: data
             }
+
             res.status(200).send(JSON.stringify(fileTextResponse));
         });
 
@@ -66,3 +72,13 @@ server.listen(PORT, (err) => {
     }
     console.log(`Server started and listening on port: ${PORT}`);
 });
+
+/**
+ * These interfaces are a quick way to lookup what the various api methods respond with.
+ */
+
+/** Response json of getFileText handler */
+interface GetFileText {
+    file: string,
+    text: string
+}
