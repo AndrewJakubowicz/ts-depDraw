@@ -35,7 +35,7 @@ winston.addColors({
 
 winston.remove(winston.transports.Console)
 winston.add(winston.transports.Console, {
-  level: 'error',
+  level: 'warn',
   prettyPrint: true,
   colorize: true,
   silent: false,

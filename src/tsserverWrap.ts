@@ -50,7 +50,7 @@ export class Tsserver {
      */
     constructor() {
 
-        this.proc = child_process.spawn('tsserver');
+        this.proc = child_process.exec('tsserver');
 
 
         /**
