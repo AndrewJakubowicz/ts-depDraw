@@ -202,7 +202,7 @@ export class Tsserver {
         let rl = readline.createInterface(instream, process.stdout);
         let lineNum = 0;
 
-        let promises: Promise<String | Buffer>[] = [];
+        let promises: Promise<[String | Buffer, String]>[] = [];
 
         /**
          * Setting up event to read the file.
