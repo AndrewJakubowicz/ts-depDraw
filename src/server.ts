@@ -8,7 +8,6 @@
 import * as http from 'http';
 import * as express from 'express';
 
-import * as path from 'path'
 
 // Port defined
 // TODO: add to config.
