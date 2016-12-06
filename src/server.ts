@@ -10,6 +10,7 @@ import * as express from 'express';
 import * as fs from 'fs';
 
 import * as winston from "./appLogger";
+import * as tss from "./tsserverWrap";
 
 let config = require("../config.json");
 
@@ -19,6 +20,7 @@ const PORT = 8080;
 
 // Server creation
 let server = express();
+let tssServer = new tss.Tsserver();
 
 // This sets up a virtual path from '/' to the static directory.
 // Adapted from https://expressjs.com/en/starter/static-files.html
@@ -73,7 +75,7 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
             res.status(200).send(JSON.stringify(fileTextResponse));
         });
 
-<<<<<<< HEAD
+
 /**
  * getFileTextMetaData returns the text in a specific file, with token information.
  */
@@ -86,19 +88,13 @@ server.get('/api/getFileTextMetadata', (req: express.Request, res: express.Respo
                 res.status(500).send('Internal Server Problem');
                 return
             }
-            let newResponse = response.map(val => {
-                winston.log("trace", `Iterating and transforming results`);
-                return tss.combineRequestReturn(val);
-            });
+            let newResponse = tss.combineRequestReturn(response);
             
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).send(JSON.stringify(response));
+            res.status(200).send(JSON.stringify(newResponse));
         })
     } else {
         res.status(400).send('Malformed user input');
-=======
-        
->>>>>>> parent of 2faa238... Added getTokenMethod
     }
 });
 

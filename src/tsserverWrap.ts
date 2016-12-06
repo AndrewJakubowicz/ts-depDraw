@@ -120,7 +120,7 @@ export class Tsserver {
     }
 
 
-    open(filePath: string, callback: (err: Error, response: string, request: string) => void) {
+    open(filePath: string, callback: (err: Error, response: string, request: string) => void){
         let command = `{"seq":${this.seq},"type":"request","command":"open","arguments":{"file":"${filePath}"}}\n`;
         winston.log("data", `SENDING TO TSSERVER: "${command}"`);
         this.proc.stdin.write(command);
@@ -138,35 +138,35 @@ export class Tsserver {
     /**
      * Reads entire typeScript file.
      */
-    scanFile(filePath: string) {
-        this.scanFileBetween(filePath, null);
+    scanFile(filePath: string, callback: (err: Error, locations: string[][]) => void) {
+        return this.scanFileBetween(filePath, null, callback);
     }
 
     /**
      * Reads entire typeScript file using define.
      */
-    scanFileBetween(filePath: string, lineStartAndEnd: [number, number]) {
-        this.scanFileBetweenWorker(filePath, lineStartAndEnd, CommandMethodsFileScan.Definition);
+    scanFileBetween(filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[][]) => void) {
+        return this.scanFileBetweenWorker(filePath, lineStartAndEnd, CommandMethodsFileScan.Definition, callback);
     }
 
     /**
      * Reads entire file using reference.
      */
-    scanFileReference(filePath: string) {
-        this.scanFileBetweenReference(filePath, null, );
+    scanFileReference(filePath: string, callback: (err: Error, locations: string[][]) => void) {
+        return this.scanFileBetweenReference(filePath, null, callback);
     }
 
     /**
      * Scans file and collects all the references between two line numbers. (inclusive)
      */
-    scanFileBetweenReference(filePath: string, lineStartAndEnd: [number, number]) {
-        this.scanFileBetweenWorker(filePath, lineStartAndEnd, CommandMethodsFileScan.References);
+    scanFileBetweenReference(filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[][]) => void) {
+        return this.scanFileBetweenWorker(filePath, lineStartAndEnd, CommandMethodsFileScan.References, callback);
     }
 
     /**
      * Worker which scans the file.
      */
-    scanFileBetweenWorker = (filePath: string, lineStartAndEnd: [number, number], command: CommandMethodsFileScan) => {
+    scanFileBetweenWorker = (filePath: string, lineStartAndEnd: [number, number], command: CommandMethodsFileScan, callback: (err: Error, locations: string[][]) => void) => {
         return Promise.resolve().then(() => {
 
             /**
@@ -255,8 +255,7 @@ export class Tsserver {
                     winston.log('verbose', `RESULTS: ${results}`);
                     // Results somehow ends up as a type string[][][], with the first index being everything we want.
                     // TODO: work out why we get a string[][][]!?
-                    return Promise.resolve(results[0]);
-                    // callback(null, results[0]);
+                    return callback(null, results[0]);
                 }).catch(err => { winston.log("error", `Promise error: ${err}`) });
             });
         }).catch(function (err) {
@@ -277,7 +276,7 @@ export class Tsserver {
      * Worker which scans the file and returns all the text with tokens.
      */
     scanFileForAllTokensBetween = (filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[][]) => void) => {
-
+        return Promise.resolve().then(() => {
         /**
          * Below code doesn't use root of directory as reference.
          * TODO: make sure this path reflects the root of the directory we are trying to traverse.
@@ -291,8 +290,7 @@ export class Tsserver {
         let tssFilePath = filePath;
         if (!fs.existsSync(filePath)) {
             winston.log("debug", `File doesn't exist: ${filePath}`);
-            callback(new Error(`File doesn't exist: ${filePath}`), null);
-            return;
+            throw new Error(`File doesn't exist: ${filePath}`);
         }
         winston.log("debug", `function scanFile accessed ${filePath}`);
 
@@ -300,7 +298,8 @@ export class Tsserver {
         let results: string[][][] = [];
         this.open(filePath, function (err, response: string) {
             if (err) {
-                return winston.log('error', `Error opening file: ${err}`);
+                winston.log('error', `Error opening file: ${err}`);
+                throw new Error(`Error opening file: ${err}`)
             }
             winston.log("verbose", `OPEN ${filePath}: ${response}`);
         });
@@ -354,7 +353,7 @@ export class Tsserver {
          */
         rl.on('close', () => {
             // Process promises after reading file has concluded.
-            return Promise.all(promises).then(function () {
+            return Promise.all(promises).then(function() {
                 /**
                  * Arguments are all here in arguments[0], arguments[1].....
                  * Thank you: http://stackoverflow.com/a/10004137
@@ -366,9 +365,12 @@ export class Tsserver {
                 winston.log('verbose', `RESULTS: ${results}`);
                 // Results somehow ends up as a type string[][][], with the first index being everything we want.
                 // TODO: work out why we get a string[][][]!?
-                callback(null, results[0]);
+                return callback(null, results[0]);
             }).catch(err => { winston.log("error", `Promise error: ${err}`) });
         });
+        }).catch(err => {
+            winston.log('error', `scanFileForAllTokensBetween failed: ${err}`);
+        })
 
     }
 
@@ -449,4 +451,10 @@ function initScannerState(text: string): ts.Scanner {
     // TODO: match variant with tsconfig.json
     scanner.setLanguageVariant(ts.LanguageVariant.Standard);
     return scanner;
+}
+
+// TODO FINISH
+export function combineRequestReturn(reqRes: string[][]){
+    winston.log('trace', `combineRequestReturn called with ${reqRes}`);
+
 }

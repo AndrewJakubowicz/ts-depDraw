@@ -5,6 +5,8 @@ var winston = require("../lib/appLogger");
 
 var tss = require("../lib/tsserverWrap");
 
+var fs = require('fs');
+
 
 /**
  * Mocking the global dependencies of the node app.
@@ -115,11 +117,11 @@ describe("Single File Scan:", function () {
                 return currentRequestResponse[1]
             })
                 .toString();
-
             done();
         });
     });
     it("Small file scan", function () {
+        
         expect(response).to.eql(`{"seq":0,"type":"response","command":"definition","request_seq":1,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2111,"offset":1},"end":{"line":2610,"offset":2}}]},{"seq":0,"type":"response","command":"definition","request_seq":2,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":1,"offset":8},"end":{"line":1,"offset":15}}]},{"seq":0,"type":"response","command":"definition","request_seq":3,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2457,"offset":5},"end":{"line":2457,"offset":64}}]},{"seq":0,"type":"response","command":"definition","request_seq":4,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/typescript/lib/lib.d.ts","start":{"line":18638,"offset":13},"end":{"line":18638,"offset":29}},{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":50,"offset":13},"end":{"line":50,"offset":29}}]},{"seq":0,"type":"response","command":"definition","request_seq":5,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":19,"offset":5},"end":{"line":19,"offset":56}}]},{"seq":0,"type":"response","command":"definition","request_seq":6,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":7,"offset":1},"end":{"line":9,"offset":2}}]},{"seq":0,"type":"response","command":"definition","request_seq":7,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":7,"offset":1},"end":{"line":9,"offset":2}}]},{"seq":0,"type":"response","command":"definition","request_seq":8,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":7,"offset":16},"end":{"line":7,"offset":17}}]},{"seq":0,"type":"response","command":"definition","request_seq":9,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":7,"offset":18},"end":{"line":7,"offset":19}}]},{"seq":0,"type":"response","command":"definition","request_seq":10,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":7,"offset":16},"end":{"line":7,"offset":17}}]},{"seq":0,"type":"response","command":"definition","request_seq":11,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex1.ts","start":{"line":7,"offset":18},"end":{"line":7,"offset":19}}]}`);
     });
 });
@@ -166,7 +168,7 @@ describe("Partial File Scan", function () {
 describe("Tokenizing example file: ", function () {
     var tsserver = new tss.Tsserver();
 
-    it("Tokenizing ex2.ts", function(done) {
+    it("Tokenizing ex2.ts", function (done) {
         tsserver.scanFileForAllTokens("tests/examples/ex2.ts", (err, listOfResponses) => {
             winston.log('error', `Hey look. Tokens of ex2.ts: ${listOfResponses}`);
             done();
