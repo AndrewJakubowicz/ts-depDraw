@@ -74,7 +74,8 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
 
             res.status(200).send(JSON.stringify(fileTextResponse));
         });
-
+    }
+});
 
 /**
  * getFileTextMetaData returns the text in a specific file, with token information.

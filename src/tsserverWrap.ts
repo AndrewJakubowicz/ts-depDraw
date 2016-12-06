@@ -35,8 +35,7 @@ interface RequestBody {
 /**
  * Wrapper for tsserver.
  * 
- * TODO: make sure tsserver responds sequentually. Otherwise we'll get confused definitions.
- *          - TODO: This should be resolved downstream by comparing seq with req_seq.
+ *          - TODO: Make sure seq and req_seq are always the same.
  */
 export class Tsserver {
     private proc: child_process.ChildProcess;
@@ -187,7 +186,9 @@ export class Tsserver {
             let results: string[][][] = [];
             this.open(filePath, function (err, response: string) {
                 // Probably want to check for success here.
-                // TODO: add error handling.
+                if (err) {
+                    throw new Error(`Failed to open ${filePath} with error ${err}.`);
+                }
                 winston.log("verbose", `OPEN ${filePath}: ${response}`);
             });
 
@@ -402,7 +403,7 @@ export class Tsserver {
 
     /**
      * This function does a fake promise in order to comply with the other functions.
-     * This is the function run on a 
+     * This is the function run on a non identifier token. Storing data for syntax highlighting.
      */
     addToken(lineNum: number, tokenOffset: number, reqBody: RequestBody) {
         return new Promise<[string | Buffer, string]>((fullfill, reject) => {
