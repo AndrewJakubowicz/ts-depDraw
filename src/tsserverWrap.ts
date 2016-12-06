@@ -515,11 +515,19 @@ function compressAddToken(request, response){
 }
 
 function compressReferencesToken(request, response){
-    return {
+    let compressedReference =  {
         tokenText: request.body.tokenText,
         tokenType: request.body.tokenType,
         isDefinition: false,
         start: response.body.start,
-        
+        file: request.body.filePath,
+        references: response.body.refs
     }
+
+    /** TODO: remove duplicate reference.
+     *      - check if token is definition.
+     *      - If it is, call definition and end end length.
+     */
+
+    return compressedReference
 }
