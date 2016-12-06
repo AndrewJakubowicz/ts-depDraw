@@ -467,9 +467,8 @@ export function combineRequestReturn(reqRes: string[][]){
     let combined = [];
     let request, response;
     for (let i = 0; i < reqRes.length; i ++){
-        
-        winston.log('debug', `${i} - ${JSON.parse(reqRes[i][0])}`);
-        winston.log('debug', `${i} - ${JSON.parse(reqRes[i][1]))}`);
+        request = JSON.parse(reqRes[i][0]);
+        response = JSON.parse(reqRes[i][1])
     }
     winston.log('trace', `combineRequestReturn called with ${reqRes}`);
     return 
