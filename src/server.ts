@@ -8,10 +8,8 @@
 import * as http from 'http';
 import * as express from 'express';
 import * as fs from 'fs';
-import * as path from "path";
 
 import * as winston from "./appLogger";
-import * as tss from "./tsserverWrap";
 
 let config = require("../config.json");
 
@@ -20,8 +18,7 @@ let config = require("../config.json");
 const PORT = 8080;
 
 // Server creation
-let server = express();                 // Http server
-let tssServer = new tss.Tsserver();     // Typescript server
+let server = express();
 
 // This sets up a virtual path from '/' to the static directory.
 // Adapted from https://expressjs.com/en/starter/static-files.html
@@ -47,7 +44,7 @@ server.use('/', express.static('static'));
  *      - isDefinition
  */
 server.get('/api/getFileText', (req: express.Request, res: express.Response) => {
-    winston.log('info', `Query for getFileText from ${req.ip}`);
+    winston.log('data', `Query for getFileText from url: ${req.url}`);
 
     let fileTextResponse: GetFileText;
 
@@ -75,9 +72,8 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
 
             res.status(200).send(JSON.stringify(fileTextResponse));
         });
-    }
-});
 
+<<<<<<< HEAD
 /**
  * getFileTextMetaData returns the text in a specific file, with token information.
  */
@@ -100,11 +96,11 @@ server.get('/api/getFileTextMetadata', (req: express.Request, res: express.Respo
         })
     } else {
         res.status(400).send('Malformed user input');
+=======
+        
+>>>>>>> parent of 2faa238... Added getTokenMethod
     }
 });
-
-
-global.appRoot = path.resolve(__dirname);
 
 server.listen(PORT, (err) => {
     if (err) {
