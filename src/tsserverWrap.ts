@@ -29,6 +29,7 @@ enum CommandMethodsFileScan {
 interface RequestBody {
     tokenText: string;
     tokenType: string;
+    filePath: string;
 }
 
 
@@ -222,14 +223,16 @@ export class Tsserver {
                                 promises.push(this.lookUpDefinition(tssFilePath, lineNum, tokenStart + 1,
                                     {
                                         tokenText: scanner.getTokenText(),
-                                        tokenType: ts.SyntaxKind[token]
+                                        tokenType: ts.SyntaxKind[token],
+                                        filePath: filePath
                                     }));
 
                             } else if (command == CommandMethodsFileScan.References) {
                                 promises.push(this.lookUpReferences(tssFilePath, lineNum, tokenStart + 1,
                                     {
                                         tokenText: scanner.getTokenText(),
-                                        tokenType: ts.SyntaxKind[token]
+                                        tokenType: ts.SyntaxKind[token],
+                                        filePath: filePath
                                     }));
                             }
                         }
@@ -339,13 +342,15 @@ export class Tsserver {
                         promises.push(this.lookUpReferences(tssFilePath, lineNum, tokenStart + 1,
                             {
                                 tokenText: scanner.getTokenText(),
-                                tokenType: ts.SyntaxKind[token]
+                                tokenType: ts.SyntaxKind[token],
+                                filePath: filePath
                             }));
                     } else {
                         promises.push(this.addToken(lineNum, tokenStart + 1,
                             {
                                 tokenText: scanner.getTokenText(),
-                                tokenType: ts.SyntaxKind[token]
+                                tokenType: ts.SyntaxKind[token],
+                                filePath: filePath
                             }))
                     }
                     token = scanner.scan();
@@ -461,7 +466,28 @@ function initScannerState(text: string): ts.Scanner {
 
 
 
-// TODO FINISH
+/**
+ * Reference calls have this shape:
+ * {"seq":0,"type":"response","command":"references","request_seq":3,"success":true,"body":{"refs":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":2,"offset":10},"lineText":"function findMe(){","end":{"line":2,"offset":16},"isWriteAccess":true,"isDefinition":true},{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":9,"offset":1},"lineText":"findMe();","end":{"line":9,"offset":7},"isWriteAccess":false,"isDefinition":false}],"symbolName":"findMe","symbolStartOffset":1,"symbolDisplayString":"function findMe(): void"}}
+ * 
+ * 
+ */
+//              {
+//                  command: "addToken",
+//                 body: {
+//                      tokenText and tokenType
+//                       }
+//             };
+
+//             {
+//                 type: "response",
+//                 success: true,
+//                 body: {
+//                     start: {
+//                         line: lineNum,
+//                         offset: tokenOffset
+//                     }
+
 export function combineRequestReturn(reqRes: string[][]){
     winston.log('trace', `combineRequestReturn called with ${reqRes}`);
     let combined = [];
@@ -469,7 +495,31 @@ export function combineRequestReturn(reqRes: string[][]){
     for (let i = 0; i < reqRes.length; i ++){
         request = JSON.parse(reqRes[i][0]);
         response = JSON.parse(reqRes[i][1])
+        if (request.command === "addToken") {
+            combined.push(compressAddToken(request, response))
+        } else if (request.command == "references") {
+            combined.push(compressReferencesToken(request, response));
+        }
     }
     winston.log('trace', `combineRequestReturn called with ${reqRes}`);
     return 
+}
+
+function compressAddToken(request, response){
+    return {
+        tokenText: request.body.tokenText,
+        tokenType: request.body.tokenType,
+        isDefinition: false,
+        start: response.body.start
+    }
+}
+
+function compressReferencesToken(request, response){
+    return {
+        tokenText: request.body.tokenText,
+        tokenType: request.body.tokenType,
+        isDefinition: false,
+        start: response.body.start,
+        
+    }
 }
