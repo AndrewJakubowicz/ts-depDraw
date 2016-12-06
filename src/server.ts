@@ -8,8 +8,10 @@
 import * as http from 'http';
 import * as express from 'express';
 import * as fs from 'fs';
+import * as path from "path";
 
 import * as winston from "./appLogger";
+import * as tss from "./tsserverWrap";
 
 let config = require("../config.json");
 
@@ -18,7 +20,8 @@ let config = require("../config.json");
 const PORT = 8080;
 
 // Server creation
-let server = express();
+let server = express();                 // Http server
+let tssServer = new tss.Tsserver();     // Typescript server
 
 // This sets up a virtual path from '/' to the static directory.
 // Adapted from https://expressjs.com/en/starter/static-files.html
@@ -44,7 +47,7 @@ server.use('/', express.static('static'));
  *      - isDefinition
  */
 server.get('/api/getFileText', (req: express.Request, res: express.Response) => {
-    winston.log('data', `Query for getFileText from url: ${req.url}`);
+    winston.log('info', `Query for getFileText from ${req.ip}`);
 
     let fileTextResponse: GetFileText;
 
@@ -72,10 +75,31 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
 
             res.status(200).send(JSON.stringify(fileTextResponse));
         });
-
-        
     }
 });
+
+/**
+ * getFileTextMetaData returns the text in a specific file, with token information.
+ */
+server.get('/api/getFileTextMetadata', (req: express.Request, res: express.Response) => {
+    winston.log('info', `Query for getFileTextMetaData`);
+    if (req.query.hasOwnProperty('filePath')){
+        tssServer.scanFileForAllTokens(req.query["filePath"], (err, response) => {
+            if (err) {
+                winston.log('error', `scanFileForAllTokens failed with: ${err}`);
+                res.status(500).send('Internal Server Problem');
+                return
+            }
+            console.log(response);
+            res.status(200).send(response);
+        })
+    } else {
+        res.status(400).send('Malformed user input');
+    }
+});
+
+
+global.appRoot = path.resolve(__dirname);
 
 server.listen(PORT, (err) => {
     if (err) {
