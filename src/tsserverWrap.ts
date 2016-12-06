@@ -359,14 +359,14 @@ export class Tsserver {
          */
         rl.on('close', () => {
             // Process promises after reading file has concluded.
-            return Promise.all(promises).then(function() {
+            return Promise.all(promises).then(function(...responses) {
                 /**
                  * Arguments are all here in arguments[0], arguments[1].....
                  * Thank you: http://stackoverflow.com/a/10004137
                  */
-                for (let i = 0; i < arguments.length; i++) {
-                    winston.log('silly', `ARGUMENTS: ${arguments[i]}`);
-                    results.push(arguments[i]);
+                for (let i = 0; i < responses.length; i++) {
+                    winston.log('silly', `ARGUMENTS: ${responses[i]}`);
+                    results.push(responses[i]);
                 }
                 winston.log('verbose', `RESULTS: ${results}`);
                 // Results somehow ends up as a type string[][][], with the first index being everything we want.
@@ -418,7 +418,7 @@ export class Tsserver {
             };
 
             let res = {
-                type: "request",
+                type: "response",
                 success: true,
                 body: {
                     start: {
@@ -459,7 +459,18 @@ function initScannerState(text: string): ts.Scanner {
     return scanner;
 }
 
+
+
 // TODO FINISH
 export function combineRequestReturn(reqRes: string[][]){
     winston.log('trace', `combineRequestReturn called with ${reqRes}`);
+    let combined = [];
+    let request, response;
+    for (let i = 0; i < reqRes.length; i ++){
+        
+        winston.log('debug', `${i} - ${JSON.parse(reqRes[i][0])}`);
+        winston.log('debug', `${i} - ${JSON.parse(reqRes[i][1]))}`);
+    }
+    winston.log('trace', `combineRequestReturn called with ${reqRes}`);
+    return 
 }
