@@ -90,8 +90,13 @@ server.get('/api/getFileTextMetadata', (req: express.Request, res: express.Respo
                 res.status(500).send('Internal Server Problem');
                 return
             }
-            console.log(response);
-            res.status(200).send(response);
+            let newResponse = response.map(val => {
+                winston.log("trace", `Iterating and transforming results`);
+                return tss.combineRequestReturn(val);
+            });
+            
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).send(JSON.stringify(response));
         })
     } else {
         res.status(400).send('Malformed user input');

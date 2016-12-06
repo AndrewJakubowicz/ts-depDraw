@@ -138,125 +138,129 @@ export class Tsserver {
     /**
      * Reads entire typeScript file.
      */
-    scanFile(filePath: string, callback: (err: Error, locations: string[][]) => void) {
-        this.scanFileBetween(filePath, null, callback);
+    scanFile(filePath: string) {
+        this.scanFileBetween(filePath, null);
     }
 
     /**
      * Reads entire typeScript file using define.
      */
-    scanFileBetween(filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[][]) => void) {
-        this.scanFileBetweenWorker(filePath, lineStartAndEnd, CommandMethodsFileScan.Definition, callback);
+    scanFileBetween(filePath: string, lineStartAndEnd: [number, number]) {
+        this.scanFileBetweenWorker(filePath, lineStartAndEnd, CommandMethodsFileScan.Definition);
     }
 
     /**
      * Reads entire file using reference.
      */
-    scanFileReference(filePath: string, callback: (err: Error, locations: string[][]) => void) {
-        this.scanFileBetweenReference(filePath, null, callback);
+    scanFileReference(filePath: string) {
+        this.scanFileBetweenReference(filePath, null, );
     }
 
     /**
      * Scans file and collects all the references between two line numbers. (inclusive)
      */
-    scanFileBetweenReference(filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[][]) => void) {
-        this.scanFileBetweenWorker(filePath, lineStartAndEnd, CommandMethodsFileScan.References, callback);
+    scanFileBetweenReference(filePath: string, lineStartAndEnd: [number, number]) {
+        this.scanFileBetweenWorker(filePath, lineStartAndEnd, CommandMethodsFileScan.References);
     }
 
     /**
      * Worker which scans the file.
      */
-    scanFileBetweenWorker = (filePath: string, lineStartAndEnd: [number, number], command: CommandMethodsFileScan, callback: (err: Error, locations: string[][]) => void) => {
+    scanFileBetweenWorker = (filePath: string, lineStartAndEnd: [number, number], command: CommandMethodsFileScan) => {
+        return Promise.resolve().then(() => {
 
-        /**
-         * Below code doesn't use root of directory as reference.
-         * TODO: make sure this path reflects the root of the directory we are trying to traverse.
-         * Answer here: http://stackoverflow.com/a/18721515
-         */
-        let appDir = path.dirname(global.appRoot);
-        filePath = appDir + '/' + filePath;
-        winston.log("debug", `function scanFile trying to access ${filePath}`);
-        let tssFilePath = filePath;
-        if (!fs.existsSync(filePath)) {
-            winston.log("debug", `File doesn't exist: ${filePath}`);
-            callback(new Error(`File doesn't exist: ${filePath}`), null);
-            return;
-        }
-
-
-        let results: string[][][] = [];
-        this.open(filePath, function (err, response: string) {
-            // Probably want to check for success here.
-            // TODO: add error handling.
-            winston.log("verbose", `OPEN ${filePath}: ${response}`);
-        });
-
-
-        /**
-         * Reading file from:
-         * https://coderwall.com/p/ohjerg/read-large-text-files-in-nodejs
-         */
-        let instream = fs.createReadStream(filePath);
-        let rl = readline.createInterface(instream, process.stdout);
-        let lineNum = 0;
-
-        let promises: Promise<[String | Buffer, String]>[] = [];
-
-        /**
-         * Setting up event to read the file.
-         * Todo: Populate a cache to prevent the same file getting read over and over.
-         *      - Important due to a single file containing many modules or namespaces.
-         */
-        rl.on('line', line => {
-            lineNum++;
-            if (!lineStartAndEnd || (lineStartAndEnd[0] <= lineNum && lineStartAndEnd[1] >= lineNum)) {
-                let scanner = initScannerState(line);
-                let token = scanner.scan();
-                let tokenStart = scanner.getTokenPos();
-                while (token != ts.SyntaxKind.EndOfFileToken) {
-                    if (token === ts.SyntaxKind.Identifier) {
-
-                        // Tokens seem to start with whitespace. Adding one allows the definition to be found.
-                        if (command == CommandMethodsFileScan.Definition) {
-                            promises.push(this.lookUpDefinition(tssFilePath, lineNum, tokenStart + 1,
-                                {
-                                    tokenText: scanner.getTokenText(),
-                                    tokenType: ts.SyntaxKind[token]
-                                }));
-
-                        } else if (command == CommandMethodsFileScan.References) {
-                            promises.push(this.lookUpReferences(tssFilePath, lineNum, tokenStart + 1,
-                                {
-                                    tokenText: scanner.getTokenText(),
-                                    tokenType: ts.SyntaxKind[token]
-                                }));
-                        }
-                    }
-                    token = scanner.scan();
-                    tokenStart = scanner.getTokenPos();
-                }
+            /**
+             * Below code doesn't use root of directory as reference.
+             * TODO: make sure this path reflects the root of the directory we are trying to traverse.
+             * Answer here: http://stackoverflow.com/a/18721515
+             */
+            let appDir = path.dirname(global.appRoot);
+            filePath = appDir + '/' + filePath;
+            winston.log("debug", `function scanFile trying to access ${filePath}`);
+            let tssFilePath = filePath;
+            if (!fs.existsSync(filePath)) {
+                winston.log("debug", `File doesn't exist: ${filePath}`);
+                throw new Error(`File doesn't exist: ${filePath}`);
             }
-        });
 
-        /**
-         * 
-         */
-        rl.on('close', () => {
-            // Process promises after reading file has concluded.
-            Promise.all(promises).then(function () {
-                /**
-                 * Arguments are all here in arguments[0], arguments[1].....
-                 * Thank you: http://stackoverflow.com/a/10004137
-                 */
-                for (let i = 0; i < arguments.length; i++) {
-                    winston.log('silly', `ARGUMENTS: ${arguments[i]}`);
-                    results.push(arguments[i]);
+
+            let results: string[][][] = [];
+            this.open(filePath, function (err, response: string) {
+                // Probably want to check for success here.
+                // TODO: add error handling.
+                winston.log("verbose", `OPEN ${filePath}: ${response}`);
+            });
+
+
+            /**
+             * Reading file from:
+             * https://coderwall.com/p/ohjerg/read-large-text-files-in-nodejs
+             */
+            let instream = fs.createReadStream(filePath);
+            let rl = readline.createInterface(instream, process.stdout);
+            let lineNum = 0;
+
+            let promises: Promise<[String | Buffer, String]>[] = [];
+
+            /**
+             * Setting up event to read the file.
+             * Todo: Populate a cache to prevent the same file getting read over and over.
+             *      - Important due to a single file containing many modules or namespaces.
+             */
+            rl.on('line', line => {
+                lineNum++;
+                if (!lineStartAndEnd || (lineStartAndEnd[0] <= lineNum && lineStartAndEnd[1] >= lineNum)) {
+                    let scanner = initScannerState(line);
+                    let token = scanner.scan();
+                    let tokenStart = scanner.getTokenPos();
+                    while (token != ts.SyntaxKind.EndOfFileToken) {
+                        if (token === ts.SyntaxKind.Identifier) {
+
+                            // Tokens seem to start with whitespace. Adding one allows the definition to be found.
+                            if (command == CommandMethodsFileScan.Definition) {
+                                promises.push(this.lookUpDefinition(tssFilePath, lineNum, tokenStart + 1,
+                                    {
+                                        tokenText: scanner.getTokenText(),
+                                        tokenType: ts.SyntaxKind[token]
+                                    }));
+
+                            } else if (command == CommandMethodsFileScan.References) {
+                                promises.push(this.lookUpReferences(tssFilePath, lineNum, tokenStart + 1,
+                                    {
+                                        tokenText: scanner.getTokenText(),
+                                        tokenType: ts.SyntaxKind[token]
+                                    }));
+                            }
+                        }
+                        token = scanner.scan();
+                        tokenStart = scanner.getTokenPos();
+                    }
                 }
-                winston.log('verbose', `RESULTS: ${results}`);
-                // Results somehow ends up as a type string[][][], with the first index being everything we want.
-                // TODO: work out why we get a string[][][]!?
-                callback(null, results[0]);
-            }).catch(err => { winston.log("error", `Promise error: ${err}`) });
+            });
+
+            /**
+             * 
+             */
+            rl.on('close', () => {
+                // Process promises after reading file has concluded.
+                return Promise.all(promises).then(function () {
+                    /**
+                     * Arguments are all here in arguments[0], arguments[1].....
+                     * Thank you: http://stackoverflow.com/a/10004137
+                     */
+                    for (let i = 0; i < arguments.length; i++) {
+                        winston.log('silly', `ARGUMENTS: ${arguments[i]}`);
+                        results.push(arguments[i]);
+                    }
+                    winston.log('verbose', `RESULTS: ${results}`);
+                    // Results somehow ends up as a type string[][][], with the first index being everything we want.
+                    // TODO: work out why we get a string[][][]!?
+                    return Promise.resolve(results[0]);
+                    // callback(null, results[0]);
+                }).catch(err => { winston.log("error", `Promise error: ${err}`) });
+            });
+        }).catch(function (err) {
+            winston.log('error', `Error in ScanFileBetweenWorker: ${err}`);
         });
 
     }
@@ -280,7 +284,7 @@ export class Tsserver {
          * Answer here: http://stackoverflow.com/a/18721515
          */
 
-        winston.log("trace",`Running scanFileForAllTokensBetween with args: ${arguments}`)
+        winston.log("trace", `Running scanFileForAllTokensBetween with args: ${arguments}`)
 
         let appDir = path.dirname(global.appRoot);
         filePath = appDir + '/' + filePath;
@@ -350,7 +354,7 @@ export class Tsserver {
          */
         rl.on('close', () => {
             // Process promises after reading file has concluded.
-            Promise.all(promises).then(function () {
+            return Promise.all(promises).then(function () {
                 /**
                  * Arguments are all here in arguments[0], arguments[1].....
                  * Thank you: http://stackoverflow.com/a/10004137
