@@ -7,15 +7,9 @@ var tss = require("../lib/tsserverWrap");
 
 var fs = require('fs');
 
-
-/**
- * Mocking the global dependencies of the node app.
- * TODO: make sure this path reflects the root of the directory we are trying to traverse.
- * ASSUMPTION: That it's this project that is being traversed.'
- * Answer here: http://stackoverflow.com/a/18721515
- */
-var path = require("path");
-global.appRoot = path.resolve(__dirname);
+// I am monkey patching this for tests. (oh god :P)
+// This will prevent the use of mocha's location and mock project directory.
+require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/index.js`;
 
 
 describe('Basic uses of a tsserver:', function () {

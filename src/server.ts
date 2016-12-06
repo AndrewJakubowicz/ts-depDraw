@@ -81,9 +81,9 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
  * getFileTextMetaData returns the text in a specific file, with token information.
  */
 server.get('/api/getFileTextMetadata', (req: express.Request, res: express.Response) => {
-    winston.log('info', `Query for getFileTextMetaData`);
+    winston.log('info', `Query for getFileTextMetaData: ${req.query["filePath"]}`);
     if (req.query.hasOwnProperty('filePath')){
-        tssServer.scanFileForAllTokens(req.query["filePath"], (err, response) => {
+        tssServer.scanFileForAllTokens('/' + req.query["filePath"], (err, response) => {
             if (err) {
                 winston.log('error', `scanFileForAllTokens failed with: ${err}`);
                 res.status(500).send('Internal Server Problem');

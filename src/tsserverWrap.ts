@@ -170,16 +170,16 @@ export class Tsserver {
 
             /**
              * Below code doesn't use root of directory as reference.
-             * TODO: make sure this path reflects the root of the directory we are trying to traverse.
-             * Answer here: http://stackoverflow.com/a/18721515
+             * 
+             * Modified using answer: http://stackoverflow.com/a/18721515
              */
-            let appDir = path.dirname(global.appRoot);
+            let appDir = path.dirname(require.main.filename);
             filePath = appDir + '/' + filePath;
             winston.log("debug", `function scanFile trying to access ${filePath}`);
             let tssFilePath = filePath;
             if (!fs.existsSync(filePath)) {
                 winston.log("debug", `File doesn't exist: ${filePath}`);
-                throw new Error(`File doesn't exist: ${filePath}`);
+                return callback(new Error(`File doesn't exist: ${filePath}`), null);
             }
 
 
@@ -187,7 +187,7 @@ export class Tsserver {
             this.open(filePath, function (err, response: string) {
                 // Probably want to check for success here.
                 if (err) {
-                    throw new Error(`Failed to open ${filePath} with error ${err}.`);
+                    return callback(new Error(`Failed to open ${filePath} with error ${err}.`), null);
                 }
                 winston.log("verbose", `OPEN ${filePath}: ${response}`);
             });
@@ -286,12 +286,17 @@ export class Tsserver {
 
         winston.log("trace", `Running scanFileForAllTokensBetween with args: ${arguments}`)
 
-        let appDir = path.dirname(global.appRoot);
+        /**
+         * Below code doesn't use root of directory as reference.
+         * 
+         * Modified using answer: http://stackoverflow.com/a/18721515
+         */
+        let appDir = path.dirname(require.main.filename);
         filePath = appDir + '/' + filePath;
         let tssFilePath = filePath;
         if (!fs.existsSync(filePath)) {
             winston.log("debug", `File doesn't exist: ${filePath}`);
-            throw new Error(`File doesn't exist: ${filePath}`);
+            return callback(new Error(`File doesn't exist: ${filePath}`), null);
         }
         winston.log("debug", `function scanFile accessed ${filePath}`);
 
@@ -300,7 +305,7 @@ export class Tsserver {
         this.open(filePath, function (err, response: string) {
             if (err) {
                 winston.log('error', `Error opening file: ${err}`);
-                throw new Error(`Error opening file: ${err}`)
+                return callback(new Error(`Error opening file: ${err}`), null);
             }
             winston.log("verbose", `OPEN ${filePath}: ${response}`);
         });
@@ -457,5 +462,4 @@ function initScannerState(text: string): ts.Scanner {
 // TODO FINISH
 export function combineRequestReturn(reqRes: string[][]){
     winston.log('trace', `combineRequestReturn called with ${reqRes}`);
-
 }
