@@ -12,3 +12,6 @@ Need to do the following.
     - Maybe with a stack?
 - Get rid of duplicate reference
     - And tick isDefinition, and fill in end of definition using define.
+
+- Write some server tests.
+- Write more tsServer tests.
