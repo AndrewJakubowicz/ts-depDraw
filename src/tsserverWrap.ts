@@ -121,7 +121,7 @@ export class Tsserver {
     }
 
 
-    open(filePath: string, callback: (err: Error, response: string, request: string) => void){
+    open(filePath: string, callback: (err: Error, response: string, request: string) => void) {
         let command = `{"seq":${this.seq},"type":"request","command":"open","arguments":{"file":"${filePath}"}}\n`;
         winston.log("data", `SENDING TO TSSERVER: "${command}"`);
         this.proc.stdin.write(command);
@@ -282,104 +282,104 @@ export class Tsserver {
      */
     scanFileForAllTokensBetween = (filePath: string, lineStartAndEnd: [number, number], callback: (err: Error, locations: string[][]) => void) => {
         return Promise.resolve().then(() => {
-        /**
-         * Below code doesn't use root of directory as reference.
-         * TODO: make sure this path reflects the root of the directory we are trying to traverse.
-         * Answer here: http://stackoverflow.com/a/18721515
-         */
+            /**
+             * Below code doesn't use root of directory as reference.
+             * TODO: make sure this path reflects the root of the directory we are trying to traverse.
+             * Answer here: http://stackoverflow.com/a/18721515
+             */
 
-        winston.log("trace", `Running scanFileForAllTokensBetween with args: ${arguments}`)
+            winston.log("trace", `Running scanFileForAllTokensBetween with args: ${arguments}`)
 
-        /**
-         * Below code doesn't use root of directory as reference.
-         * 
-         * Modified using answer: http://stackoverflow.com/a/18721515
-         */
-        let appDir = path.dirname(require.main.filename);
-        filePath = appDir + '/' + filePath;
-        let tssFilePath = filePath;
-        if (!fs.existsSync(filePath)) {
-            winston.log("debug", `File doesn't exist: ${filePath}`);
-            return callback(new Error(`File doesn't exist: ${filePath}`), null);
-        }
-        winston.log("debug", `function scanFile accessed ${filePath}`);
-
-
-        let results: string[][][] = [];
-        this.open(filePath, function (err, response: string) {
-            if (err) {
-                winston.log('error', `Error opening file: ${err}`);
-                return callback(new Error(`Error opening file: ${err}`), null);
+            /**
+             * Below code doesn't use root of directory as reference.
+             * 
+             * Modified using answer: http://stackoverflow.com/a/18721515
+             */
+            let appDir = path.dirname(require.main.filename);
+            filePath = appDir + '/' + filePath;
+            let tssFilePath = filePath;
+            if (!fs.existsSync(filePath)) {
+                winston.log("debug", `File doesn't exist: ${filePath}`);
+                return callback(new Error(`File doesn't exist: ${filePath}`), null);
             }
-            winston.log("verbose", `OPEN ${filePath}: ${response}`);
-        });
+            winston.log("debug", `function scanFile accessed ${filePath}`);
 
 
-        /**
-         * Reading file from:
-         * https://coderwall.com/p/ohjerg/read-large-text-files-in-nodejs
-         */
-        let instream = fs.createReadStream(filePath);
-        let rl = readline.createInterface(instream, process.stdout);
-        let lineNum = 0;
+            let results: string[][][] = [];
+            this.open(filePath, function (err, response: string) {
+                if (err) {
+                    winston.log('error', `Error opening file: ${err}`);
+                    return callback(new Error(`Error opening file: ${err}`), null);
+                }
+                winston.log("verbose", `OPEN ${filePath}: ${response}`);
+            });
 
-        let promises: Promise<[String | Buffer, String]>[] = [];
 
-        /**
-         * Setting up event to read the file.
-         * Todo: Populate a cache to prevent the same file getting read over and over.
-         *      - Important due to a single file containing many modules or namespaces.
-         */
-        rl.on('line', line => {
-            lineNum++;
-            if (!lineStartAndEnd || (lineStartAndEnd[0] <= lineNum && lineStartAndEnd[1] >= lineNum)) {
-                let scanner = initScannerState(line);
-                let token = scanner.scan();
-                let tokenStart = scanner.getTokenPos();
-                while (token != ts.SyntaxKind.EndOfFileToken) {
-                    winston.log("trace", `Iterating tokens at position (${lineNum}, ${tokenStart})`)
-                    if (token === ts.SyntaxKind.Identifier) {
-                        // Tokens seem to start with whitespace. Adding one allows the definition to be found.
-                        promises.push(this.lookUpReferences(tssFilePath, lineNum, tokenStart + 1,
-                            {
-                                tokenText: scanner.getTokenText(),
-                                tokenType: ts.SyntaxKind[token],
-                                filePath: filePath
-                            }));
-                    } else {
-                        promises.push(this.addToken(lineNum, tokenStart + 1,
-                            {
-                                tokenText: scanner.getTokenText(),
-                                tokenType: ts.SyntaxKind[token],
-                                filePath: filePath
-                            }));
+            /**
+             * Reading file from:
+             * https://coderwall.com/p/ohjerg/read-large-text-files-in-nodejs
+             */
+            let instream = fs.createReadStream(filePath);
+            let rl = readline.createInterface(instream, process.stdout);
+            let lineNum = 0;
+
+            let promises: Promise<[String | Buffer, String]>[] = [];
+
+            /**
+             * Setting up event to read the file.
+             * Todo: Populate a cache to prevent the same file getting read over and over.
+             *      - Important due to a single file containing many modules or namespaces.
+             */
+            rl.on('line', line => {
+                lineNum++;
+                if (!lineStartAndEnd || (lineStartAndEnd[0] <= lineNum && lineStartAndEnd[1] >= lineNum)) {
+                    let scanner = initScannerState(line);
+                    let token = scanner.scan();
+                    let tokenStart = scanner.getTokenPos();
+                    while (token != ts.SyntaxKind.EndOfFileToken) {
+                        winston.log("trace", `Iterating tokens at position (${lineNum}, ${tokenStart})`)
+                        if (token === ts.SyntaxKind.Identifier) {
+                            // Tokens seem to start with whitespace. Adding one allows the definition to be found.
+                            promises.push(this.lookUpReferences(tssFilePath, lineNum, tokenStart + 1,
+                                {
+                                    tokenText: scanner.getTokenText(),
+                                    tokenType: ts.SyntaxKind[token],
+                                    filePath: filePath
+                                }));
+                        } else {
+                            promises.push(this.addToken(lineNum, tokenStart + 1,
+                                {
+                                    tokenText: scanner.getTokenText(),
+                                    tokenType: ts.SyntaxKind[token],
+                                    filePath: filePath
+                                }));
+                        }
+                        token = scanner.scan();
+                        tokenStart = scanner.getTokenPos();
                     }
-                    token = scanner.scan();
-                    tokenStart = scanner.getTokenPos();
                 }
-            }
-        });
+            });
 
-        /**
-         * 
-         */
-        rl.on('close', () => {
-            // Process promises after reading file has concluded.
-            return Promise.all(promises).then(function(...responses) {
-                /**
-                 * Arguments are all here in arguments[0], arguments[1].....
-                 * Thank you: http://stackoverflow.com/a/10004137
-                 */
-                for (let i = 0; i < responses.length; i++) {
-                    winston.log('silly', `ARGUMENTS: ${responses[i]}`);
-                    results.push(responses[i]);
-                }
-                winston.log('verbose', `RESULTS: ${results}`);
-                // Results somehow ends up as a type string[][][], with the first index being everything we want.
-                // TODO: work out why we get a string[][][]!?
-                return callback(null, results[0]);
-            }).catch(err => { winston.log("error", `Promise error: ${err}`) });
-        });
+            /**
+             * 
+             */
+            rl.on('close', () => {
+                // Process promises after reading file has concluded.
+                return Promise.all(promises).then(function (...responses) {
+                    /**
+                     * Arguments are all here in arguments[0], arguments[1].....
+                     * Thank you: http://stackoverflow.com/a/10004137
+                     */
+                    for (let i = 0; i < responses.length; i++) {
+                        winston.log('silly', `ARGUMENTS: ${responses[i]}`);
+                        results.push(responses[i]);
+                    }
+                    winston.log('verbose', `RESULTS: ${results}`);
+                    // Results somehow ends up as a type string[][][], with the first index being everything we want.
+                    // TODO: work out why we get a string[][][]!?
+                    return callback(null, results[0]);
+                }).catch(err => { winston.log("error", `Promise error: ${err}`) });
+            });
         }).catch(err => {
             winston.log('error', `scanFileForAllTokensBetween failed: ${err}`);
         })
@@ -439,6 +439,70 @@ export class Tsserver {
         })
     }
 
+    /**
+     * addEndPosition adds an end Position to defined tokens.
+     * 
+     * Assumes that the file has already been opened in tsserver.
+     */
+    addEndPosition(token: TokenIdentifierData, filePath: string) {
+        winston.log('trace', `addEndPosition method used for ${JSON.stringify(token)}`);
+        return new Promise<TokenIdentifierData>((fulfill, reject)=>{
+            if (!token.isDefinition) {
+                fulfill(token);
+            }
+            let definitionResult = new Promise((fulfillInside, rejectInside)=> {
+                this.definition(filePath, token.start.line, token.start.offset, function (err, res, req) {
+                    if (err) rejectInside(err);
+                    else fulfillInside(JSON.parse(res));
+                });
+            });
+            definitionResult.then(definitionResponse => {
+                winston.log('debug', `definitionResponse = ${JSON.stringify(definitionResponse)}`)
+                token.end = definitionResponse.body[0].end;
+                fulfill(token)
+            }).catch(err => {
+                winston.log('error', `addEndPosition failed with ${err}`);
+            });
+        });
+    }
+
+    /**
+     * Reference calls have this shape:
+     * {"seq":0,"type":"response","command":"references","request_seq":3,"success":true,"body":{"refs":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":2,"offset":10},"lineText":"function findMe(){","end":{"line":2,"offset":16},"isWriteAccess":true,"isDefinition":true},{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":9,"offset":1},"lineText":"findMe();","end":{"line":9,"offset":7},"isWriteAccess":false,"isDefinition":false}],"symbolName":"findMe","symbolStartOffset":1,"symbolDisplayString":"function findMe(): void"}}
+     * 
+     * 
+     */
+    //              {
+    //                  command: "addToken",
+    //                 body: {
+    //                      tokenText and tokenType
+    //                       }
+    //             };
+
+    //             {
+    //                 type: "response",
+    //                 success: true,
+    //                 body: {
+    //                     start: {
+    //                         line: lineNum,
+    //                         offset: tokenOffset
+    //                     }
+    combineRequestReturn(reqRes: string[][]) {
+        winston.log('trace', `combineRequestReturn called with ${reqRes}`);
+        let combined: Promise<TokenData|TokenIdentifierData>[] = [];
+        let request, response;
+        for (let i = 0; i < reqRes.length; i++) {
+            request = JSON.parse(reqRes[i][0]);
+            response = JSON.parse(reqRes[i][1])
+            if (request.command === "addToken") {
+                combined.push(compressAddToken(request, response))
+            } else if (request.command == "references") {
+                combined.push(this.addEndPosition(compressReferencesToken(request, response), request.body.filePath));
+            }
+        }
+        winston.log('trace', `combineRequestReturn called with ${reqRes}`);
+        return Promise.all(combined);
+    }
 }
 
 
@@ -467,52 +531,16 @@ function initScannerState(text: string): ts.Scanner {
 
 
 
-/**
- * Reference calls have this shape:
- * {"seq":0,"type":"response","command":"references","request_seq":3,"success":true,"body":{"refs":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":2,"offset":10},"lineText":"function findMe(){","end":{"line":2,"offset":16},"isWriteAccess":true,"isDefinition":true},{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":9,"offset":1},"lineText":"findMe();","end":{"line":9,"offset":7},"isWriteAccess":false,"isDefinition":false}],"symbolName":"findMe","symbolStartOffset":1,"symbolDisplayString":"function findMe(): void"}}
- * 
- * 
- */
-//              {
-//                  command: "addToken",
-//                 body: {
-//                      tokenText and tokenType
-//                       }
-//             };
 
-//             {
-//                 type: "response",
-//                 success: true,
-//                 body: {
-//                     start: {
-//                         line: lineNum,
-//                         offset: tokenOffset
-//                     }
 
-export function combineRequestReturn(reqRes: string[][]){
-    winston.log('trace', `combineRequestReturn called with ${reqRes}`);
-    let combined = [];
-    let request, response;
-    for (let i = 0; i < reqRes.length; i ++){
-        request = JSON.parse(reqRes[i][0]);
-        response = JSON.parse(reqRes[i][1])
-        if (request.command === "addToken") {
-            combined.push(compressAddToken(request, response))
-        } else if (request.command == "references") {
-            combined.push(compressReferencesToken(request, response));
-        }
-    }
-    winston.log('trace', `combineRequestReturn called with ${reqRes}`);
-    return combined
-}
-
-function compressAddToken(request, response){
-    return {
-        tokenText: request.body.tokenText,
-        tokenType: request.body.tokenType,
-        isDefinition: false,
-        start: response.body.start
-    }
+function compressAddToken(request, response) {
+    return new Promise<TokenData>((fullfill, reject) => {
+        fullfill({
+            tokenText: request.body.tokenText,
+            tokenType: request.body.tokenType,
+            start: response.body.start
+        });
+    });
 }
 
 
@@ -539,13 +567,15 @@ export interface TokenIdentifierData extends TokenData {
 
 /**
  * Must be passed a valid javascript object.
+ *  Creates token. Then removes itself from the tokens all references list.
+ *  Updates its own isDefinition by looking at the all references list.
  */
-export function compressReferencesToken(request, response){
+export function compressReferencesToken(request, response) {
     assert.notEqual(typeof request, 'string', `compressReferencesToken must be passed an object`);
     let currentFile = request.body.filePath;
     let referenceToken = createReferenceToken(request, response);
-
-    return removeDuplicateReference(referenceToken, currentFile);
+    referenceToken = removeDuplicateReference(referenceToken, currentFile)
+    return referenceToken
 }
 
 export function createReferenceToken(request, response): TokenIdentifierData {
@@ -557,8 +587,10 @@ export function createReferenceToken(request, response): TokenIdentifierData {
         tokenText: request.body.tokenText,
         tokenType: request.body.tokenType,
         isDefinition: false,                // By default initialized as false. TODO: Needs to be checked from references.
-        start: { line: request.arguments.line,
-                offset: request.arguments.offset },
+        start: {
+            line: request.arguments.line,
+            offset: request.arguments.offset
+        },
         references: response.body.refs      // Technically only need: file, start, isDefinition.
     }
 }
@@ -568,12 +600,12 @@ export function createReferenceToken(request, response): TokenIdentifierData {
  * removeDuplicateReference cleans up the token data.
  * Compares file paths
  */
-export function removeDuplicateReference(compressedReference: TokenIdentifierData, relFilePath: string){
+export function removeDuplicateReference(compressedReference: TokenIdentifierData, relFilePath: string) {
     let thisNodeStart = compressedReference.start;
     let referenceList = compressedReference.references;
     let splitIndex: number;
-    for (let i = 0; i < referenceList.length; i++){
-        if (comparePosition(referenceList[i].start, thisNodeStart) && comparePath(referenceList[i].file, relFilePath)){
+    for (let i = 0; i < referenceList.length; i++) {
+        if (comparePosition(referenceList[i].start, thisNodeStart) && comparePath(referenceList[i].file, relFilePath)) {
             splitIndex = i;
             break;
         }
@@ -581,14 +613,14 @@ export function removeDuplicateReference(compressedReference: TokenIdentifierDat
 
     let cutoutReference = referenceList.splice(splitIndex, 1);
     compressedReference.isDefinition = cutoutReference[0].isDefinition;
-    
+
 
     return compressedReference;
 
-    function comparePosition(a, b){
+    function comparePosition(a, b) {
         return a.line === b.line && a.offset === b.offset;
     }
-    function comparePath(absPath:string, relPath:string): boolean{
+    function comparePath(absPath: string, relPath: string): boolean {
         winston.log('trace', `Comparing ${absPath.slice(-1 * relPath.length)} === ${relPath}`);
         return absPath.slice(-1 * relPath.length) === relPath;
     }

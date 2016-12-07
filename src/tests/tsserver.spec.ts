@@ -104,9 +104,16 @@ describe('Basic uses of a tsserver:', function () {
 
 describe("Single File Scan:", function () {
     var response;
+    let tsserver = new tss.Tsserver();
+
+    // Remember to clean up the server once you're finished.
+    after(function () {
+        tsserver.kill();
+    });
+
     before(function (done) {
         this.timeout(10000);
-        var tsserver = new tss.Tsserver();
+
         tsserver.scanFile("tests/examples/ex1.ts", (err, r) => {
             if (err) {
                 winston.log('error', err);
@@ -131,9 +138,16 @@ describe("Single File Scan:", function () {
 describe("Partial File Scan", function () {
     let response;
     let response2;
+    let tsserver = new tss.Tsserver();
+
+    // Remember to clean up the server once you're finished.
+    after(function () {
+        tsserver.kill();
+    });
+
     before(function (done) {
         this.timeout(10000);
-        let tsserver = new tss.Tsserver();
+
         tsserver.scanFileBetween("tests/examples/ex1.ts", [1, 9], (err, r) => {
             if (err) {
                 winston.log('error', err);
@@ -173,10 +187,25 @@ describe("Partial File Scan", function () {
 describe("Tokenizing example file: ", function () {
     var tsserver = new tss.Tsserver();
 
+    // Remember to clean up the server once you're finished.
+    after(function () {
+        tsserver.kill();
+    });
+
+    /**
+     * TODO: Revisit optimizing the token scanner.
+     *  You could theoretically clean tokens while waiting for tsserver.
+     *  Instead here we're waiting for full population, then do a clean.
+     */
     it("Tokenizing ex2.ts", function (done) {
         tsserver.scanFileForAllTokens("tests/examples/ex2.ts", (err, listOfResponses) => {
-            winston.log('error', `Hey look. Tokens of ex2.ts: ${console.dir(tss.combineRequestReturn(listOfResponses))}`);
-            done();
+            tsserver.combineRequestReturn(listOfResponses).then(function (...listOfTokens) {
+                console.dir(JSON.stringify(listOfTokens));
+                expect(listOfTokens).to.eql(JSON.parse('[[{"tokenText":"function","tokenType":"FunctionKeyword","start":{"line":2,"offset":1}},{"tokenText":"findMe","tokenType":"Identifier","isDefinition":true,"start":{"line":2,"offset":10},"references":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":9,"offset":1},"lineText":"findMe();","end":{"line":9,"offset":7},"isWriteAccess":false,"isDefinition":false}],"end":{"line":4,"offset":2}},{"tokenText":"(","tokenType":"OpenParenToken","start":{"line":2,"offset":16}},{"tokenText":")","tokenType":"CloseParenToken","start":{"line":2,"offset":17}},{"tokenText":"{","tokenType":"FirstPunctuation","start":{"line":2,"offset":18}},{"tokenText":"return","tokenType":"ReturnKeyword","start":{"line":3,"offset":5}},{"tokenText":"}","tokenType":"CloseBraceToken","start":{"line":4,"offset":1}},{"tokenText":"import","tokenType":"ImportKeyword","start":{"line":6,"offset":1}},{"tokenText":"*","tokenType":"AsteriskToken","start":{"line":6,"offset":8}},{"tokenText":"as","tokenType":"AsKeyword","start":{"line":6,"offset":10}},{"tokenText":"example1","tokenType":"Identifier","isDefinition":true,"start":{"line":6,"offset":13},"references":[],"end":{"line":9,"offset":2}},{"tokenText":"from","tokenType":"FromKeyword","start":{"line":6,"offset":22}},{"tokenText":"\\"./ex1\\"","tokenType":"StringLiteral","start":{"line":6,"offset":27}},{"tokenText":";","tokenType":"SemicolonToken","start":{"line":6,"offset":34}},{"tokenText":"findMe","tokenType":"Identifier","isDefinition":false,"start":{"line":9,"offset":1},"references":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":2,"offset":10},"lineText":"function findMe(){","end":{"line":2,"offset":16},"isWriteAccess":true,"isDefinition":true}]},{"tokenText":"(","tokenType":"OpenParenToken","start":{"line":9,"offset":7}},{"tokenText":")","tokenType":"CloseParenToken","start":{"line":9,"offset":8}},{"tokenText":";","tokenType":"SemicolonToken","start":{"line":9,"offset":9}}]]'))
+                done();
+            }).catch(err => {
+                winston.log('error', `Failed to create token list: ${err}`);
+            });
         });
     });
 });
@@ -186,6 +215,11 @@ describe("Token compressing", function () {
     let s = new tss.Tsserver();
     this.timeout(5000);
     let savedToken: tss.TokenIdentifierData;
+
+    // Remember to clean up the server once you're finished.
+    after(function () {
+        s.kill();
+    });
 
     it("Simplifying reference token", function (done) {
         let filePath = 'tests/examples/ex5.ts';
@@ -216,9 +250,9 @@ describe("Token compressing", function () {
                 references:
                 [{
                     file: '/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex3.ts',
-                    start: {line: 7, offset: 5},
+                    start: { line: 7, offset: 5 },
                     lineText: 'ex5.betterConsoleLog(adderTest(1, 2));',
-                    end: {line: 7, offset: 21},
+                    end: { line: 7, offset: 21 },
                     isWriteAccess: false,
                     isDefinition: false
                 },
@@ -237,7 +271,7 @@ describe("Token compressing", function () {
         });
     });
 
-    it("Removing repeats from token", function(){
+    it("Removing repeats from token", function () {
         let scrubbedToken = tss.removeDuplicateReference(savedToken, 'tests/examples/ex5.ts');
         winston.log('trace', `Scrubbed savedToken`);
         expect(scrubbedToken).to.eql({
@@ -248,9 +282,9 @@ describe("Token compressing", function () {
             references:
             [{
                 file: '/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex3.ts',
-                start: {line: 7, offset: 5},
+                start: { line: 7, offset: 5 },
                 lineText: 'ex5.betterConsoleLog(adderTest(1, 2));',
-                end: {line: 7, offset: 21},
+                end: { line: 7, offset: 21 },
                 isWriteAccess: false,
                 isDefinition: false
             }]

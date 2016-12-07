@@ -69,3 +69,8 @@ start: {line: number, offset: number}
 
 end?: {line: number, offset: number}
 
+
+# Optimisation thoughts
+
+- When scanning the file for tokens, we wait for all the data before cleaning the data.
+- This could be sped up by simply doing both steps in 1 loop through the data.
