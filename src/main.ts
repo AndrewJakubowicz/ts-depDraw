@@ -14,5 +14,4 @@ global.appRoot = path.resolve(__dirname);
 
 
 // Server testing
-require("./lib/server");
-
+require("./server");

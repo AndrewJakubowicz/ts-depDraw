@@ -49,7 +49,7 @@ The idea of this project is to create a dependency graph of your project.
 Storage of the memory.
 
 ```
-Hash table [**filepath**] -> {  Ordered token array [**starting line-offset**] -> token data ,
+Hash table [**filepath**] -> {  tokenData[] (ordered) ,
                                 Segment tree of the isDefinition scopes -> token data }
 ```
 

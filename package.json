@@ -2,12 +2,13 @@
   "name": "ts-depdraw",
   "version": "0.0.1",
   "description": "Visualisation of typescript project dependencies.",
-  "main": "index.js",
+  "main": "lib/main.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha tests --recursive --watch"
+    "test": "mocha tests --recursive --watch",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
