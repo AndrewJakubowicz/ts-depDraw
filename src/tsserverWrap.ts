@@ -503,6 +503,22 @@ export class Tsserver {
         winston.log('trace', `combineRequestReturn called with ${reqRes}`);
         return Promise.all(combined);
     }
+
+    scanFileForAllTokensPretty(filePath: string){
+        winston.log('trace', `scanFileForAllTokensPretty called for ${filePath}`);
+        return new Promise<(TokenData | TokenIdentifierData)[]>((fulfill, reject)=>{
+            this.scanFileForAllTokens(filePath, (err, listOfResponses) => {
+                if (err) {
+                    reject(err);
+                }
+                this.combineRequestReturn(listOfResponses).then(function(...listOfTokens){
+                    fulfill(listOfTokens);
+                }).catch(function (err){
+                    reject(err);
+                });
+            });
+        });
+    }
 }
 
 

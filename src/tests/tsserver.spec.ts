@@ -207,6 +207,19 @@ describe("Tokenizing example file: ", function () {
             });
         });
     });
+
+    /**
+     * Cool short form of grabbing tokens.
+     */
+    it("Tokenizing ex2.ts shortForm", function(done){
+        tsserver.scanFileForAllTokensPretty('tests/examples/ex2.ts')
+            .then(tokenList => {
+                expect(tokenList).to.eql(JSON.parse('[[{"tokenText":"function","tokenType":"FunctionKeyword","start":{"line":2,"offset":1}},{"tokenText":"findMe","tokenType":"Identifier","isDefinition":true,"start":{"line":2,"offset":10},"references":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":9,"offset":1},"lineText":"findMe();","end":{"line":9,"offset":7},"isWriteAccess":false,"isDefinition":false}],"end":{"line":4,"offset":2}},{"tokenText":"(","tokenType":"OpenParenToken","start":{"line":2,"offset":16}},{"tokenText":")","tokenType":"CloseParenToken","start":{"line":2,"offset":17}},{"tokenText":"{","tokenType":"FirstPunctuation","start":{"line":2,"offset":18}},{"tokenText":"return","tokenType":"ReturnKeyword","start":{"line":3,"offset":5}},{"tokenText":"}","tokenType":"CloseBraceToken","start":{"line":4,"offset":1}},{"tokenText":"import","tokenType":"ImportKeyword","start":{"line":6,"offset":1}},{"tokenText":"*","tokenType":"AsteriskToken","start":{"line":6,"offset":8}},{"tokenText":"as","tokenType":"AsKeyword","start":{"line":6,"offset":10}},{"tokenText":"example1","tokenType":"Identifier","isDefinition":true,"start":{"line":6,"offset":13},"references":[],"end":{"line":9,"offset":2}},{"tokenText":"from","tokenType":"FromKeyword","start":{"line":6,"offset":22}},{"tokenText":"\\"./ex1\\"","tokenType":"StringLiteral","start":{"line":6,"offset":27}},{"tokenText":";","tokenType":"SemicolonToken","start":{"line":6,"offset":34}},{"tokenText":"findMe","tokenType":"Identifier","isDefinition":false,"start":{"line":9,"offset":1},"references":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":2,"offset":10},"lineText":"function findMe(){","end":{"line":2,"offset":16},"isWriteAccess":true,"isDefinition":true}]},{"tokenText":"(","tokenType":"OpenParenToken","start":{"line":9,"offset":7}},{"tokenText":")","tokenType":"CloseParenToken","start":{"line":9,"offset":8}},{"tokenText":";","tokenType":"SemicolonToken","start":{"line":9,"offset":9}}]]'))
+                done();
+            }).catch(err => {
+                winston.log('error', `Error in promise scanFileForAllTokensPretty: ${err}`);
+            })
+    })
 });
 
 
