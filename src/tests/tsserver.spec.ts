@@ -1,15 +1,15 @@
 var chai = require("chai");
 var sinon = require("sinon");
 var expect = chai.expect;
-var winston = require("../lib/appLogger");
+var winston = require("../appLogger");
 
-var tss = require("../lib/tsserverWrap");
+var tss = require("../tsserverWrap");
 
 var fs = require('fs');
 
 // I am monkey patching this for tests. (oh god :P)
 // This will prevent the use of mocha's location and mock project directory.
-require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/index.js`;
+require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/lib/main.js`;
 
 
 describe('Basic uses of a tsserver:', function () {

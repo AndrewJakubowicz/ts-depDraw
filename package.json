@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha tests --recursive --watch",
+    "test": "mocha lib/tests --recursive --watch",
     "build": "tsc"
   },
   "repository": {
