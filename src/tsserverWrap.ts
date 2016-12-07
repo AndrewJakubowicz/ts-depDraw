@@ -351,7 +351,7 @@ export class Tsserver {
                                 tokenText: scanner.getTokenText(),
                                 tokenType: ts.SyntaxKind[token],
                                 filePath: filePath
-                            }))
+                            }));
                     }
                     token = scanner.scan();
                     tokenStart = scanner.getTokenPos();
@@ -514,13 +514,35 @@ function compressAddToken(request, response){
     }
 }
 
-function compressReferencesToken(request, response){
-    let compressedReference =  {
+
+interface Position {
+    line: number
+    offset: number
+}
+
+
+interface TokenData {
+    tokenText: string
+    tokenType: string
+    start: Position
+}
+
+/**
+ * This is the data stored by all tokens which can have dependencies.
+ */
+interface TokenIdentifierData extends TokenData {
+    isDefinition: boolean
+    end?: Position
+    references: any[]
+}
+
+export function compressReferencesToken(request, response){
+    let currentFile = request.body.filePath;
+    let compressedReference: TokenIdentifierData =  {
         tokenText: request.body.tokenText,
         tokenType: request.body.tokenType,
         isDefinition: false,                // By default initialized as false. TODO: Needs to be checked from references.
         start: response.body.start,
-        file: request.body.filePath,
         references: response.body.refs      // Technically only need: file, start, isDefinition.
     }
 
@@ -532,11 +554,11 @@ function compressReferencesToken(request, response){
     return compressedReference
 }
 
-/* @internal */
-// Exposed for testing.
-export function removeDuplicateReference(compressedReference){
+/**
+ * removeDuplicateReference cleans up the token data.
+ */
+export function removeDuplicateReference(compressedReference: TokenIdentifierData, filePath: string){
     // Will need to compare file paths.
-    let thisNodeFilePath = compressedReference.file;
     let thisNodeStart = compressedReference.start;
 
     let referenceList = compressedReference.references;
