@@ -89,10 +89,17 @@ server.get('/api/getFileTextMetadata', (req: express.Request, res: express.Respo
                 res.status(500).send('Internal Server Problem');
                 return
             }
-            let newResponse = tss.combineRequestReturn(response);
-            
             res.setHeader('Content-Type', 'application/json');
-            res.status(200).send(JSON.stringify(newResponse));
+            res.status(200);
+            tssServer.combineRequestReturn(response)
+                .then(tokensObject => {
+                    res.status(200).send(JSON.stringify(tokensObject));
+                    return
+                }).catch(err => {
+                    winston.log('error', `combineRequestReturn failed with: ${err}`);
+                    res.status(500).send('Internal Server Problem');
+                    return
+                });
         })
     } else {
         res.status(400).send('Malformed user input');
