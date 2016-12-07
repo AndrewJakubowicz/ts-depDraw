@@ -1,6 +1,7 @@
-var chai = require("chai");
-var sinon = require("sinon");
+import * as chai from 'chai';
+// var sinon = require("sinon");
 var expect = chai.expect;
+let should = chai.should();
 var winston = require("../appLogger");
 
 var tss = require("../tsserverWrap");
@@ -24,7 +25,9 @@ describe('Basic uses of a tsserver:', function () {
     it("Open a file on the tsserver", function (done) {
         s.open("tests/examples/ex1.ts", function (err, d) {
             if (err) {
-                throw new Error("Basic use of a tsserver failed:", err);
+                winston.log('error', `Basic use of a tsserver failed: ${err}`);
+                should.not.exist(err)
+                done()
             }
             var captured = d.toString();
             expect(captured).to.eq('{"seq":0,"type":"event","event":"configFileDiag","body":{"triggerFile":"tests/examples/ex1.ts","configFile":"tsconfig.json","diagnostics":[]}}');
@@ -35,6 +38,7 @@ describe('Basic uses of a tsserver:', function () {
     it('Simple definition matches', function (done) {
         var captured = "";
         s.open("tests/examples/ex1.ts", function (err, d) {
+
             captured += d.toString();
         });
         s.definition('tests/examples/ex1.ts', 1, 14, function (err, d) {
@@ -50,7 +54,7 @@ describe('Basic uses of a tsserver:', function () {
         var captured = "";
         s.open('tests/examples/ex5.ts', function (err, d, req) {
             if (err) {
-                throw new Error("Reference method failed:", err);
+                winston.log('error', `Reference method failed: ${err}`);
             }
         });
         s.references('tests/examples/ex5.ts', 7, 17, function (err, d, req) {
@@ -90,6 +94,7 @@ describe('Basic uses of a tsserver:', function () {
 
     it('Testing if define will give function scope of betterConsoleLog', function (done) {
         s.definition('tests/examples/ex5.ts', 7, 17, function (err, res, req) {
+
             expect(res.toString()).to.eql(JSON.stringify({ "seq": 0, "type": "response", "command": "definition", "request_seq": 5, "success": true, "body": [{ "file": "tests/examples/ex5.ts", "start": { "line": 7, "offset": 1 }, "end": { "line": 9, "offset": 2 } }] }))
             done()
         });
@@ -104,6 +109,7 @@ describe("Single File Scan:", function () {
         tsserver.scanFile("tests/examples/ex1.ts", (err, r) => {
             if (err) {
                 winston.log('error', err);
+                done()
             }
             winston.log('data', r[0]);
             // We want just the responses from the tuples.
@@ -122,12 +128,15 @@ describe("Single File Scan:", function () {
 
 
 describe("Partial File Scan", function () {
+    let response;
+    let response2;
     before(function (done) {
         this.timeout(10000);
-        var tsserver = new tss.Tsserver();
+        let tsserver = new tss.Tsserver();
         tsserver.scanFileBetween("tests/examples/ex1.ts", [1, 9], (err, r) => {
             if (err) {
                 winston.log('error', err);
+                done();
             }
             winston.log('data', r[0]);
             response = r.map((currentRequestResponse) => {
@@ -139,6 +148,7 @@ describe("Partial File Scan", function () {
             tsserver.scanFileBetween("tests/examples/ex1.ts", [1, 1], (err, r) => {
                 if (err) {
                     winston.log('error', err);
+                    done()
                 }
                 winston.log('data', `response2: '${r[0]}'`);
                 response2 = r.map((currentRequestResponse) => {
