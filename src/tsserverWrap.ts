@@ -334,26 +334,11 @@ export class Tsserver {
     }
 
     /**
-     * Reference calls have this shape:
-     * {"seq":0,"type":"response","command":"references","request_seq":3,"success":true,"body":{"refs":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":2,"offset":10},"lineText":"function findMe(){","end":{"line":2,"offset":16},"isWriteAccess":true,"isDefinition":true},{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex2.ts","start":{"line":9,"offset":1},"lineText":"findMe();","end":{"line":9,"offset":7},"isWriteAccess":false,"isDefinition":false}],"symbolName":"findMe","symbolStartOffset":1,"symbolDisplayString":"function findMe(): void"}}
+     * Internal use: Use scanFileForAllTokensPretty instead.
      * 
-     * 
+     * This function takes a list of request/responses and cleans the data.
+     * In future optimizations it would be good not to have this bottleneck.
      */
-    //              {
-    //                  command: "addToken",
-    //                 body: {
-    //                      tokenText and tokenType
-    //                       }
-    //             };
-
-    //             {
-    //                 type: "response",
-    //                 success: true,
-    //                 body: {
-    //                     start: {
-    //                         line: lineNum,
-    //                         offset: tokenOffset
-    //                     }
     combineRequestReturn(reqRes: string[][]) {
         winston.log('trace', `combineRequestReturn called with ${reqRes}`);
         let combined: Promise<TokenData|TokenIdentifierData>[] = [];
