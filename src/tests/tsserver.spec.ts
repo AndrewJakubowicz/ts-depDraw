@@ -7,6 +7,7 @@ var winston = require("../appLogger");
 import * as tss from "../tsserverWrap";
 
 var fs = require('fs');
+import * as path from 'path';
 
 // I am monkey patching this for tests. (oh god :P)
 // This will prevent the use of mocha's location and mock project directory.
@@ -183,20 +184,75 @@ describe("Tokenizing example file: ", function () {
 
 describe("Token compressing", function () {
     let s = new tss.Tsserver();
+    this.timeout(5000);
+    let savedToken: tss.TokenIdentifierData;
 
     it("Simplifying reference token", function (done) {
-        s.open('tests/examples/ex5.ts', function (err, res, req) {
+        let filePath = 'tests/examples/ex5.ts';
+        let appDir = path.dirname(require.main.filename);
+        let tssPath = filePath;
+        filePath = appDir + '/' + filePath;
+        s.open(filePath, function (err, res, req) {
             if (err) {
                 winston.log('error', `Reference method failed: ${err}`);
             }
         });
-        s.references('tests/examples/ex5.ts', 7, 17, function (err, res, req) {
-            return Promise.resolve(res).then(function (cap) {
-                expect(cap.toString()).to.eql('{"seq":0,"type":"response","command":"references","request_seq":1,"success":true,"body":{"refs":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex3.ts","start":{"line":7,"offset":5},"lineText":"ex5.betterConsoleLog(adderTest(1, 2));","end":{"line":7,"offset":21},"isWriteAccess":false,"isDefinition":false},{"file":"tests/examples/ex5.ts","start":{"line":7,"offset":17},"lineText":"export function betterConsoleLog(a){","end":{"line":7,"offset":33},"isWriteAccess":true,"isDefinition":true}],"symbolName":"betterConsoleLog","symbolStartOffset":17,"symbolDisplayString":"function betterConsoleLog(a: any): void"}}');
-                done();
-            }).catch(function (err) {
-                winston.log('error', `Promise error in references: ${err}`)
-            });
+        s.lookUpReferences(tssPath, 7, 17, {
+            tokenText: "betterConsoleLog",
+            tokenType: "Identifier",
+            filePath: filePath
+        }).then(function (reqResTuple) {
+            let req = JSON.parse(String(reqResTuple[0]));
+            let res = JSON.parse(reqResTuple[1]);
+
+            let token = tss.createReferenceToken(req, res);
+            savedToken = token;
+
+            expect(token).to.eql({
+                tokenText: 'betterConsoleLog',
+                tokenType: 'Identifier',
+                isDefinition: false,
+                start: { line: 7, offset: 17 },
+                references:
+                [{
+                    file: '/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex3.ts',
+                    start: {line: 7, offset: 5},
+                    lineText: 'ex5.betterConsoleLog(adderTest(1, 2));',
+                    end: {line: 7, offset: 21},
+                    isWriteAccess: false,
+                    isDefinition: false
+                },
+                {
+                    file: '/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex5.ts',
+                    start: { line: 7, offset: 17 },
+                    lineText: 'export function betterConsoleLog(a){',
+                    end: { line: 7, offset: 33 },
+                    isWriteAccess: true,
+                    isDefinition: true
+                }]
+            })
+            done();
+        }).catch(function (err) {
+            winston.log('error', `Promise error in references: ${err}`)
         });
+    });
+
+    it("Removing repeats from token", function(){
+        let scrubbedToken = tss.removeDuplicateReference(savedToken, 'tests/examples/ex5.ts');
+        expect(scrubbedToken).to.eql({
+            tokenText: 'betterConsoleLog',
+            tokenType: 'Identifier',
+            isDefinition: true,
+            start: { line: 7, offset: 17 },
+            references:
+            [{
+                file: '/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex3.ts',
+                start: {line: 7, offset: 5},
+                lineText: 'ex5.betterConsoleLog(adderTest(1, 2));',
+                end: {line: 7, offset: 21},
+                isWriteAccess: false,
+                isDefinition: false
+            }]
+        })
     });
 });

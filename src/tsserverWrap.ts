@@ -6,6 +6,7 @@
 import * as path from "path";
 import * as readline from "readline";
 import * as fs from "fs";
+import * as assert from "assert";
 import * as ts from "TypeScript";
 
 import * as child_process from "child_process";
@@ -515,13 +516,13 @@ function compressAddToken(request, response){
 }
 
 
-interface Position {
+export interface Position {
     line: number
     offset: number
 }
 
 
-interface TokenData {
+export interface TokenData {
     tokenText: string
     tokenType: string
     start: Position
@@ -530,7 +531,7 @@ interface TokenData {
 /**
  * This is the data stored by all tokens which can have dependencies.
  */
-interface TokenIdentifierData extends TokenData {
+export interface TokenIdentifierData extends TokenData {
     isDefinition: boolean
     end?: Position
     references: any[]
@@ -538,30 +539,58 @@ interface TokenIdentifierData extends TokenData {
 
 export function compressReferencesToken(request, response){
     let currentFile = request.body.filePath;
-    let compressedReference: TokenIdentifierData =  {
-        tokenText: request.body.tokenText,
-        tokenType: request.body.tokenType,
-        isDefinition: false,                // By default initialized as false. TODO: Needs to be checked from references.
-        start: response.body.start,
-        references: response.body.refs      // Technically only need: file, start, isDefinition.
-    }
+    let referenceToken = createReferenceToken(request, response);
 
     /** TODO: remove duplicate reference.
      *      - check if token is definition.
      *      - If it is, call definition and get end length.
      */
 
-    return compressedReference
+    return referenceToken
 }
+
+export function createReferenceToken(request, response): TokenIdentifierData {
+    assert.ok(request.body.tokenText, "Token text is required in request");
+    assert.ok(request.body.tokenType, "Token type is required in request");
+    assert.ok(request.arguments.line, "Token line is required in request");
+    assert.ok(request.arguments.offset, "Token offset is required in request");
+    return {
+        tokenText: request.body.tokenText,
+        tokenType: request.body.tokenType,
+        isDefinition: false,                // By default initialized as false. TODO: Needs to be checked from references.
+        start: { line: request.arguments.line,
+                offset: request.arguments.offset },
+        references: response.body.refs      // Technically only need: file, start, isDefinition.
+    }
+}
+
 
 /**
  * removeDuplicateReference cleans up the token data.
+ * Todo: Updates isDefinition.
+ * Compares file paths
  */
-export function removeDuplicateReference(compressedReference: TokenIdentifierData, filePath: string){
-    // Will need to compare file paths.
+export function removeDuplicateReference(compressedReference: TokenIdentifierData, relFilePath: string){
     let thisNodeStart = compressedReference.start;
-
     let referenceList = compressedReference.references;
+    let splitIndex: number;
+    for (let i = 0; i < referenceList.length; i++){
+        if (comparePosition(referenceList[i].start, thisNodeStart) && comparePath(referenceList[i].file, relFilePath)){
+            splitIndex = i;
+            break;
+        }
+    }
 
+    let cutoutReference = referenceList.splice(splitIndex, 1);
+    compressedReference.isDefinition = cutoutReference[0].isDefinition;
 
+    return compressedReference;
+
+    function comparePosition(a, b){
+        return a.line === b.line && a.offset === b.offset;
+    }
+    function comparePath(absPath:string, relPath:string): boolean{
+        winston.log('trace', `Comparing ${absPath.slice(-1 * relPath.length)} === ${relPath}`);
+        return absPath.slice(-1 * relPath.length) === relPath;
+    }
 }
