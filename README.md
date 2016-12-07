@@ -69,6 +69,8 @@ start: {line: number, offset: number}
 
 end?: {line: number, offset: number}
 
+references: []
+
 
 # Optimisation thoughts
 
