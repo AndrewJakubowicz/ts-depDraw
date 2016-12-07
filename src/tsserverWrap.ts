@@ -546,7 +546,7 @@ export function compressReferencesToken(request, response){
      *      - If it is, call definition and get end length.
      */
 
-    return referenceToken
+    return removeDuplicateReference(referenceToken, currentFile);
 }
 
 export function createReferenceToken(request, response): TokenIdentifierData {
@@ -583,6 +583,7 @@ export function removeDuplicateReference(compressedReference: TokenIdentifierDat
 
     let cutoutReference = referenceList.splice(splitIndex, 1);
     compressedReference.isDefinition = cutoutReference[0].isDefinition;
+    
 
     return compressedReference;
 

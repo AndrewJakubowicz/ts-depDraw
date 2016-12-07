@@ -239,6 +239,7 @@ describe("Token compressing", function () {
 
     it("Removing repeats from token", function(){
         let scrubbedToken = tss.removeDuplicateReference(savedToken, 'tests/examples/ex5.ts');
+        winston.log('trace', `Scrubbed savedToken`);
         expect(scrubbedToken).to.eql({
             tokenText: 'betterConsoleLog',
             tokenType: 'Identifier',
