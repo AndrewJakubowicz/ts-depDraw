@@ -1,4 +1,9 @@
 # ts-depDraw
+
+
+** THIS PRODUCT IS BARELY FUNCTIONAL IN ITS CURRENT STATE**
+
+
 Visualisation of typescript project dependencies.
 
 

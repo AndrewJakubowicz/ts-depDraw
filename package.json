@@ -4,7 +4,9 @@
   "description": "Visualisation of typescript project dependencies.",
   "main": "lib/main.js",
   "directories": {
-    "test": "tests"
+    "test": "./lib/tests",
+    "bin": "./bin",
+    "lib": "./lib"
   },
   "scripts": {
     "test": "mocha lib/tests --recursive --watch",
@@ -15,7 +17,7 @@
     "type": "git",
     "url": "git+https://github.com/SpyR1014/ts-depDraw.git"
   },
-  "author": "Andrew Jakubowicz",
+  "author": "Andrew Jakubowicz <spyr1014@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/SpyR1014/ts-depDraw/issues"
