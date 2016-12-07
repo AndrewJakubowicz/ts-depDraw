@@ -4,13 +4,13 @@ var expect = chai.expect;
 let should = chai.should();
 var winston = require("../appLogger");
 
-var tss = require("../tsserverWrap");
+import * as tss from "../tsserverWrap";
 
 var fs = require('fs');
 
 // I am monkey patching this for tests. (oh god :P)
 // This will prevent the use of mocha's location and mock project directory.
-require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/lib/main.js`;
+require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/examples/`;
 
 
 describe('Basic uses of a tsserver:', function () {
@@ -178,5 +178,4 @@ describe("Tokenizing example file: ", function () {
             done();
         });
     });
-
 });

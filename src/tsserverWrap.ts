@@ -531,3 +531,15 @@ function compressReferencesToken(request, response){
 
     return compressedReference
 }
+
+/* @internal */
+// Exposed for testing.
+export function removeDuplicateReference(compressedReference){
+    // Will need to compare file paths.
+    let thisNodeFilePath = compressedReference.file;
+    let thisNodeStart = compressedReference.start;
+
+    let referenceList = compressedReference.references;
+
+
+}
