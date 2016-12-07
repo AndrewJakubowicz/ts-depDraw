@@ -175,7 +175,7 @@ describe("Tokenizing example file: ", function () {
 
     it("Tokenizing ex2.ts", function (done) {
         tsserver.scanFileForAllTokens("tests/examples/ex2.ts", (err, listOfResponses) => {
-            winston.log('error', `Hey look. Tokens of ex2.ts: ${listOfResponses}`);
+            winston.log('error', `Hey look. Tokens of ex2.ts: ${console.dir(tss.combineRequestReturn(listOfResponses))}`);
             done();
         });
     });

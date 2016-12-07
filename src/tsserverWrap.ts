@@ -503,7 +503,7 @@ export function combineRequestReturn(reqRes: string[][]){
         }
     }
     winston.log('trace', `combineRequestReturn called with ${reqRes}`);
-    return 
+    return combined
 }
 
 function compressAddToken(request, response){
@@ -537,14 +537,13 @@ export interface TokenIdentifierData extends TokenData {
     references: any[]
 }
 
+/**
+ * Must be passed a valid javascript object.
+ */
 export function compressReferencesToken(request, response){
+    assert.notEqual(typeof request, 'string', `compressReferencesToken must be passed an object`);
     let currentFile = request.body.filePath;
     let referenceToken = createReferenceToken(request, response);
-
-    /** TODO: remove duplicate reference.
-     *      - check if token is definition.
-     *      - If it is, call definition and get end length.
-     */
 
     return removeDuplicateReference(referenceToken, currentFile);
 }
@@ -567,7 +566,6 @@ export function createReferenceToken(request, response): TokenIdentifierData {
 
 /**
  * removeDuplicateReference cleans up the token data.
- * Todo: Updates isDefinition.
  * Compares file paths
  */
 export function removeDuplicateReference(compressedReference: TokenIdentifierData, relFilePath: string){
