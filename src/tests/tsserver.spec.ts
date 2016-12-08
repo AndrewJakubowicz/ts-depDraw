@@ -13,6 +13,9 @@ import * as path from 'path';
 // This will prevent the use of mocha's location and mock project directory.
 require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/examples/`;
 
+/**
+ * TODO: Make it so that anyone can test.
+ */
 global.tsconfigRootDir = '/Users/Spyr1014/Projects/TypeScript/ts-depDraw';
 global.rootFile = 'tests/examples/ex3.ts'
 
