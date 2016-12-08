@@ -8,6 +8,7 @@
 import * as http from 'http';
 import * as express from 'express';
 import * as fs from 'fs';
+import * as path from 'path';
 
 import * as winston from "./appLogger";
 import * as tss from "./tsserverWrap";
@@ -25,7 +26,8 @@ let tssServer = new tss.Tsserver();
 // This sets up a virtual path from '/' to the static directory.
 // Adapted from https://expressjs.com/en/starter/static-files.html
 // If this middleware fails, it will fall through to the next handler.
-server.use('/', express.static('static'));
+// We don't know where our app will be located. Hence the path.join
+server.use('/', express.static(path.join(__dirname,'..', 'static')));
 
 /**
  * This is the api used to load the code files into the browser.
