@@ -131,9 +131,9 @@ describe("Token compressing", function () {
 
     it("Simplifying reference token", function (done) {
         let filePath = 'tests/examples/ex5.ts';
-        let appDir = path.dirname(require.main.filename);
+        let appDir = global.tsconfigRootDir;
         let tssPath = filePath;
-        filePath = appDir + '/' + filePath;
+        filePath = path.join(appDir,filePath);
         s.open(filePath, function (err, res, req) {
             if (err) {
                 winston.log('error', `Reference method failed: ${err}`);

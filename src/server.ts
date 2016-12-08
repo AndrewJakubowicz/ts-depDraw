@@ -31,7 +31,7 @@ server.use('/', express.static('static'));
  * This is the api used to load the code files into the browser.
  * 
  * Default:
- *  If there is no fileName supplied, the api responds with the config.rootFile
+ *  If there is no fileName supplied, the api responds with the global.rootFile
  *  filePath.
  * 
  * This cannot just return plain text. This returns a list of all the text.
