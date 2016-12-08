@@ -123,8 +123,8 @@ describe("Tokenizing example file: ", function () {
     })
 });
 
-// TODO: comment test.
-describe.only("Tokenizing file with comments", function(){
+
+describe("Tokenizing file with comments", function(){
     let tsserver = new tss.Tsserver();
     // Remember to clean up the server once you're finished.
     after(function () {

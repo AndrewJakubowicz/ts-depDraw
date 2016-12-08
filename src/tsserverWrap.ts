@@ -396,7 +396,7 @@ function initScannerState(text: string): ts.Scanner {
     let scanner = ts.createScanner(ts.ScriptTarget.Latest, true);
     scanner.setText(text);
     scanner.setOnError((message, length) => {
-        winston.error(`${message}`);
+        winston.warn(`${JSON.stringify(message)}`);
     });
     // TODO: match with users tsconfig.json
     scanner.setScriptTarget(ts.ScriptTarget.ES5);

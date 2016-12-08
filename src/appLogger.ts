@@ -35,11 +35,16 @@ winston.addColors({
 
 winston.remove(winston.transports.Console)
 winston.add(winston.transports.Console, {
-  level: 'trace',
+  level: 'warn',
   prettyPrint: true,
   colorize: true,
   silent: false,
   timestamp: false
+});
+winston.add(winston.transports.File, {
+  name: 'error-file',
+  filename: 'ts-depDraw-error.log',
+  level: 'warn'
 });
 
 export = winston
