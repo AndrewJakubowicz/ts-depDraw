@@ -26,8 +26,11 @@ function init() {
         // Now we want to highlight the words that might have definitions attached to them.
         // This call will return a json object that specifies line number, offset and length
         // of identifier.
-        yield makeRequest('/api/getIdentifierTokens', { filePath: filePath })
+        yield makeRequest('/api/getFileTextMetadata', { filePath: filePath })
             .then(function (res) {
+            console.log(JSON.parse(res));
+        }).catch(function (err) {
+            console.error(err);
         });
     });
 }

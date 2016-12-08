@@ -23,9 +23,11 @@ async function init() {
     // Now we want to highlight the words that might have definitions attached to them.
     // This call will return a json object that specifies line number, offset and length
     // of identifier.
-    await makeRequest('/api/getIdentifierTokens', {filePath: filePath})
+    await makeRequest('/api/getFileTextMetadata', {filePath: filePath})
         .then((res: string) => {
-
+            console.log(JSON.parse(res));
+        }).catch(err => {
+            console.error(err)
         });
 }
 

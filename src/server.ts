@@ -27,7 +27,7 @@ let tssServer = new tss.Tsserver();
 // Adapted from https://expressjs.com/en/starter/static-files.html
 // If this middleware fails, it will fall through to the next handler.
 // We don't know where our app will be located. Hence the path.join
-server.use('/', express.static(path.join(__dirname,'..', 'static')));
+server.use('/', express.static(path.join(__dirname, '..', 'static')));
 
 /**
  * This is the api used to load the code files into the browser.
@@ -53,7 +53,7 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
     let fileTextResponse: GetFileText;
 
     /** If filePath exists then lookup that files text. */
-    if (req.query.hasOwnProperty('filePath')){
+    if (req.query.hasOwnProperty('filePath')) {
         fileTextResponse = {
             file: req.query["filePath"],
             text: "Example Text so far!"
@@ -63,12 +63,12 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
 
     } else {
         // Optimistically assume they want root text.
-        fs.readFile(global.rootFile, 'utf8', function(err, data){
+        fs.readFile(global.rootFile, 'utf8', function (err, data) {
             if (err) {
                 winston.log('error', `Default getFileText failed with ${err}`);
                 res.status(500).send('Unable to get root file text!');
             }
-            
+
             fileTextResponse = {
                 file: global.rootFile,
                 text: data
@@ -84,27 +84,19 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
  */
 server.get('/api/getFileTextMetadata', (req: express.Request, res: express.Response) => {
     winston.log('info', `Query for getFileTextMetaData: ${req.query["filePath"]}`);
-    if (req.query.hasOwnProperty('filePath')){
-        tssServer.scanFileForAllTokens(req.query["filePath"], (err, response) => {
-            if (err) {
-                winston.log('error', `scanFileForAllTokens failed with: ${err}`);
-                res.status(500).send('Internal Server Problem');
-                return
-            }
-            res.setHeader('Content-Type', 'application/json');
-            res.status(200);
-            tssServer.combineRequestReturn(response)
-                .then(tokensObject => {
-                    res.status(200).send(JSON.stringify(tokensObject));
-                    return
-                }).catch(err => {
-                    winston.log('error', `combineRequestReturn failed with: ${err}`);
-                    res.status(500).send('Internal Server Problem');
-                    return
-                });
-        })
+    if (req.query.hasOwnProperty('filePath')) {
+        tssServer.scanFileForAllTokensPretty(req.query["filePath"])
+            .then(tokenList => {
+                res.setHeader('Content-Type', 'application/json');
+                res.status(200).send(JSON.stringify(tokenList));
+            })
+            .catch(err => {
+                winston.log('error', `getFileTextMetadata failed with ${err}`);
+                res.status(500).send('Unable to get text metadata!');
+            });
     } else {
-        res.status(400).send('Malformed user input');
+        winston.log('error', `getFileTextMetadata no filePath`);
+        res.status(400).send('Malformed client input.');
     }
 });
 
