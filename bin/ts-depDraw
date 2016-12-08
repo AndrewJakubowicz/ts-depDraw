@@ -9,14 +9,11 @@ var fs = require('fs');
 
 var winston = require('../lib/appLogger');
 
-var globals = {};
+global.tsconfigRootDir = process.cwd();
 
 
 
-globals.cwd = process.cwd();
-globals.rootFile = "";
-
-winston.log('debug', `Working directory set at: ${globals.cwd}`);
+winston.log('debug', `Working directory set at: ${global.tsconfigRootDir}`);
 
 (function processArguments(){
     var userInputs = process.argv.slice(2);
@@ -39,11 +36,11 @@ winston.log('debug', `Working directory set at: ${globals.cwd}`);
     var filePath = userInputs[0];
     
     // Check if the file is valid.
-    winston.log('debug', path.join(globals.cwd, filePath),fs.existsSync(path.join(globals.cwd, filePath)));
+    winston.log('debug', path.join(global.tsconfigRootDir, filePath),fs.existsSync(path.join(global.tsconfigRootDir, filePath)));
     // TODO: fix this.
     // TODO: fix help documentation once this is fixed.
-    // Limitation is that cwd needs to have a tsconfig. (Guarantees that tsserver works);
-    if (!fs.existsSync(path.join(globals.cwd, 'tsconfig.json'))){
+    // Limitation is that global.tsconfigRootDir needs to have a tsconfig. (Guarantees that tsserver works);
+    if (!fs.existsSync(path.join(global.tsconfigRootDir, 'tsconfig.json'))){
         winston.log('error', `
 ts-depDraw must be initialized from a directory containing a tsconfig.
 
@@ -55,11 +52,15 @@ ts-depDraw must be initialized from a directory containing a tsconfig.
 `.trim());
         return
     }
-    if (!fs.existsSync(path.join(globals.cwd, filePath))) {
-        winston.log('error', `${path.join(globals.cwd, filePath)} doesn't exist.`);
+    if (path.extname(filePath) !== '.ts'){
+        winston.log('error', `${filePath} must end with '.ts'`);
         return
     }
-    globals.rootFile = filePath;
+    if (!fs.existsSync(path.join(global.tsconfigRootDir, filePath))) {
+        winston.log('error', `${path.join(global.tsconfigRootDir, filePath)} doesn't exist.`);
+        return
+    }
+    global.rootFile = filePath;
 
     winston.log('trace', 'User input correct, starting program.');
     require('../');

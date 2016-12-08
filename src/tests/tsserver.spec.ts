@@ -13,6 +13,10 @@ import * as path from 'path';
 // This will prevent the use of mocha's location and mock project directory.
 require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/examples/`;
 
+global.tsconfigRootDir = '/Users/Spyr1014/Projects/TypeScript/ts-depDraw';
+global.rootFile = 'tests/examples/ex3.ts'
+
+
 
 describe('Basic uses of a tsserver:', function () {
     this.timeout(10000);
@@ -175,7 +179,7 @@ describe("Token compressing", function () {
         });
     });
 
-    it("Removing repeats from token", function () {
+    it("Removing repeats from token", function (done) {
         let scrubbedToken = tss.removeDuplicateReference(savedToken, 'tests/examples/ex5.ts');
         winston.log('trace', `Scrubbed savedToken`);
         expect(scrubbedToken).to.eql({
@@ -193,5 +197,6 @@ describe("Token compressing", function () {
                 isDefinition: false
             }]
         })
+        done();
     });
 });

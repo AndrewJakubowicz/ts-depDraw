@@ -155,15 +155,18 @@ export class Tsserver {
              * Answer here: http://stackoverflow.com/a/18721515
              */
 
-            winston.log("trace", `Running scanFileForAllTokensBetween with args: ${arguments}`)
+            winston.log("trace", `Running scanFileForAllTokensBetween on ${filePath}`);
 
             /**
              * Below code doesn't use root of directory as reference.
              * 
              * Modified using answer: http://stackoverflow.com/a/18721515
              */
-            let appDir = path.dirname(require.main.filename);
-            filePath = appDir + '/' + filePath;
+            try { assert.ok(global.tsconfigRootDir, "Global object tsconfigRootDir must be set."); }
+            catch (err) { return callback(new Error(`tsconfig root directory not set: ${err}`), null); }
+
+            let appDir = global.tsconfigRootDir;
+            filePath = path.join(appDir, filePath);
             let tssFilePath = filePath;
             if (!fs.existsSync(filePath)) {
                 winston.log("debug", `File doesn't exist: ${filePath}`);
@@ -249,6 +252,7 @@ export class Tsserver {
             });
         }).catch(err => {
             winston.log('error', `scanFileForAllTokensBetween failed: ${err}`);
+            return callback(err, null);
         })
 
     }
@@ -313,11 +317,11 @@ export class Tsserver {
      */
     addEndPosition(token: TokenIdentifierData, filePath: string) {
         winston.log('trace', `addEndPosition method used for ${JSON.stringify(token)}`);
-        return new Promise<TokenIdentifierData>((fulfill, reject)=>{
+        return new Promise<TokenIdentifierData>((fulfill, reject) => {
             if (!token.isDefinition) {
                 fulfill(token);
             }
-            let definitionResult = new Promise((fulfillInside, rejectInside)=> {
+            let definitionResult = new Promise((fulfillInside, rejectInside) => {
                 this.definition(filePath, token.start.line, token.start.offset, function (err, res, req) {
                     if (err) rejectInside(err);
                     else fulfillInside(JSON.parse(res));
@@ -341,7 +345,7 @@ export class Tsserver {
      */
     combineRequestReturn(reqRes: string[][]) {
         winston.log('trace', `combineRequestReturn called with ${reqRes}`);
-        let combined: Promise<TokenData|TokenIdentifierData>[] = [];
+        let combined: Promise<TokenData | TokenIdentifierData>[] = [];
         let request, response;
         for (let i = 0; i < reqRes.length; i++) {
             request = JSON.parse(reqRes[i][0]);
@@ -356,16 +360,16 @@ export class Tsserver {
         return Promise.all(combined);
     }
 
-    scanFileForAllTokensPretty(filePath: string){
+    scanFileForAllTokensPretty(filePath: string) {
         winston.log('trace', `scanFileForAllTokensPretty called for ${filePath}`);
-        return new Promise<(TokenData | TokenIdentifierData)[]>((fulfill, reject)=>{
+        return new Promise<(TokenData | TokenIdentifierData)[]>((fulfill, reject) => {
             this.scanFileForAllTokens(filePath, (err, listOfResponses) => {
                 if (err) {
                     reject(err);
                 }
-                this.combineRequestReturn(listOfResponses).then(function(...listOfTokens){
+                this.combineRequestReturn(listOfResponses).then(function (...listOfTokens) {
                     fulfill(listOfTokens);
-                }).catch(function (err){
+                }).catch(function (err) {
                     reject(err);
                 });
             });
