@@ -3,6 +3,24 @@
 
 ** THIS PRODUCT IS BARELY FUNCTIONAL IN ITS CURRENT STATE **
 
+Install with `npm install ts-depDraw -D`.
+
+Usage:
+
+```
+    Usage: ts-depDraw <file path>
+
+    Current limitations:
+        - Requires you to initialize the program from the
+          directory containing tsconfig.json.
+
+    Options:
+
+    -h, --help           output help
+```
+
+
+
 
 Visualisation of typescript project dependencies.
 

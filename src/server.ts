@@ -61,14 +61,14 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
 
     } else {
         // Optimistically assume they want root text.
-        fs.readFile(config.rootFile, 'utf8', function(err, data){
+        fs.readFile(global.rootFile, 'utf8', function(err, data){
             if (err) {
                 winston.log('error', `Default getFileText failed with ${err}`);
                 res.status(500).send('Unable to get root file text!');
             }
             
             fileTextResponse = {
-                file: config.rootFile,
+                file: global.rootFile,
                 text: data
             }
 
