@@ -207,7 +207,7 @@ export class Tsserver {
                     let token = scanner.scan();
                     let tokenStart = scanner.getTokenPos();
                     while (token != ts.SyntaxKind.EndOfFileToken) {
-                        winston.log("trace", `Iterating tokens at position (${lineNum}, ${tokenStart})`)
+                        winston.log("trace", `Iterating tokens at position (${lineNum}, ${tokenStart})`)         
                         if (token === ts.SyntaxKind.Identifier) {
                             // Tokens seem to start with whitespace. Adding one allows the definition to be found.
                             promises.push(this.lookUpReferences(tssFilePath, lineNum, tokenStart + 1,
@@ -350,10 +350,14 @@ export class Tsserver {
         for (let i = 0; i < reqRes.length; i++) {
             request = JSON.parse(reqRes[i][0]);
             response = JSON.parse(reqRes[i][1])
-            if (request.command === "addToken") {
+            if (!response.success){
+                combined.push(compressFailedToken(request, response))
+            } else if (request.command === "addToken") {
                 combined.push(compressAddToken(request, response))
             } else if (request.command == "references") {
                 combined.push(this.addEndPosition(compressReferencesToken(request, response), request.body.filePath));
+            } else {
+                winston.log('error', `Tokens are falling through!!!!`);
             }
         }
         winston.log('trace', `combineRequestReturn called with ${reqRes}`);
@@ -401,9 +405,20 @@ function initScannerState(text: string): ts.Scanner {
     return scanner;
 }
 
-
-
-
+/**
+ * This is the very tiny token that is created for failed lookups.
+ * 
+ * These are mostly comments.
+ */
+function compressFailedToken(request, response) {
+    return new Promise<TokenData>((fullfill, reject) => {
+        fullfill({
+            tokenText: request.body.tokenText,
+            tokenType: request.body.tokenType,
+            start: null
+        });
+    });
+}
 
 function compressAddToken(request, response) {
     return new Promise<TokenData>((fullfill, reject) => {
@@ -451,6 +466,12 @@ export function compressReferencesToken(request, response) {
 }
 
 export function createReferenceToken(request, response): TokenIdentifierData {
+    // If success failed then it's a comment or useless.
+    if (!response.success){
+        winston.log('error', `
+Something has gone fatally wrong.
+Token must be successful to be passed into createReferenceToken.`.trim());
+    }
     assert.ok(request.body.tokenText, "Token text is required in request");
     assert.ok(request.body.tokenType, "Token type is required in request");
     assert.ok(request.arguments.line, "Token line is required in request");
