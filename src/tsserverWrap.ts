@@ -365,12 +365,12 @@ export class Tsserver {
         return new Promise<(TokenData | TokenIdentifierData)[]>((fulfill, reject) => {
             this.scanFileForAllTokens(filePath, (err, listOfResponses) => {
                 if (err) {
-                    reject(err);
+                    return reject(err);
                 }
                 this.combineRequestReturn(listOfResponses).then(function (...listOfTokens) {
-                    fulfill(listOfTokens);
+                    return fulfill(listOfTokens);
                 }).catch(function (err) {
-                    reject(err);
+                    return reject(err);
                 });
             });
         });

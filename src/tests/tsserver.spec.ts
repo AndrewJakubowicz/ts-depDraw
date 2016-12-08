@@ -103,6 +103,7 @@ describe("Tokenizing example file: ", function () {
                 done();
             }).catch(err => {
                 winston.log('error', `Failed to create token list: ${err}`);
+                done();
             });
         });
     });
@@ -117,8 +118,29 @@ describe("Tokenizing example file: ", function () {
                 done();
             }).catch(err => {
                 winston.log('error', `Error in promise scanFileForAllTokensPretty: ${err}`);
-            })
+                done();
+            });
     })
+});
+
+// TODO: comment test.
+describe("Tokenizing file with comments", function(){
+    let tsserver = new tss.Tsserver();
+    // Remember to clean up the server once you're finished.
+    after(function () {
+        tsserver.kill();
+    });
+    this.timeout(7000);
+    it("Small example", function (done){
+        tsserver.scanFileForAllTokensPretty('tests/examples/commentedExample.ts')
+            .then(tokenList => {
+                console.dir(tokenList);
+                
+            }).catch(err=>{
+                winston.log('error', `Error in commented file scanFileForAllTokensPretty: ${err}`);
+                done();
+        });
+    });
 });
 
 
