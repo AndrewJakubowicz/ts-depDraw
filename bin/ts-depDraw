@@ -1,0 +1,66 @@
+#!/usr/bin/env node
+
+'use strict';
+
+
+// Node imports
+var path = require('path');
+var fs = require('fs');
+
+var winston = require('../lib/appLogger');
+
+var globals = {};
+
+
+
+globals.cwd = process.cwd();
+globals.rootFile = "";
+
+winston.log('debug', `Working directory set at: ${globals.cwd}`);
+
+(function processArguments(){
+    var userInputs = process.argv.slice(2);
+
+    if (userInputs.length !== 1 || userInputs[0] == '-h' || userInputs[0] == '--help'){
+        console.log(`
+    Usage: ts-depDraw <file path>
+
+    Current limitations:
+        - Requires you to initialize the program from the
+          directory containing tsconfig.json.
+
+    Options:
+
+    -h, --help           output help
+        
+        `);
+        return
+    }
+    var filePath = userInputs[0];
+    
+    // Check if the file is valid.
+    winston.log('debug', path.join(globals.cwd, filePath),fs.existsSync(path.join(globals.cwd, filePath)));
+    // TODO: fix this.
+    // TODO: fix help documentation once this is fixed.
+    // Limitation is that cwd needs to have a tsconfig. (Guarantees that tsserver works);
+    if (!fs.existsSync(path.join(globals.cwd, 'tsconfig.json'))){
+        winston.log('error', `
+ts-depDraw must be initialized from a directory containing a tsconfig.
+
+    If you have TypeScript installed globally or locally you can initiate
+    tsconfig with:
+
+        tsc --init
+
+`.trim());
+        return
+    }
+    if (!fs.existsSync(path.join(globals.cwd, filePath))) {
+        winston.log('error', `${path.join(globals.cwd, filePath)} doesn't exist.`);
+        return
+    }
+    globals.rootFile = filePath;
+
+    winston.log('trace', 'User input correct, starting program.');
+    require('../');
+})();
