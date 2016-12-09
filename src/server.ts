@@ -12,8 +12,8 @@ import * as path from 'path';
 
 import * as winston from "./appLogger";
 import * as tss from "./tsserverWrap";
+import * as jsonUtil from "./util/jsonUtil";
 
-let config = require("../config.json");
 
 // Port defined
 // TODO: add to config.
@@ -24,14 +24,21 @@ let server = express();
 let tssServer = new tss.Tsserver();
 
 // TODO: make this not in memory
-let fileMetaData: Map<string, string> = new Map();
-let fileText: Map<string, string> = new Map();
+let FILEMETADATA: Map<string, string> = new Map();
+let FILETEXT: Map<string, string> = new Map();
 
 // This sets up a virtual path from '/' to the static directory.
 // Adapted from https://expressjs.com/en/starter/static-files.html
 // If this middleware fails, it will fall through to the next handler.
 // We don't know where our app will be located. Hence the path.join
 server.use('/', express.static(path.join(__dirname, '..', 'static')));
+
+/**
+ * This can be called to get the first file that the user initiated the server on.
+ */
+server.get('/api/init', (req: express.Request, res: express.Response) => {
+    res.status(200).send(global.rootFile);
+});
 
 /**
  * This is the api used to load the code files into the browser.
@@ -55,32 +62,31 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
     winston.log('data', `Query for getFileText from url: ${req.url}`);
 
     let fileTextResponse: GetFileText;
+    let filePath: string;
 
     /** If filePath exists then lookup that files text. */
     if (req.query.hasOwnProperty('filePath')) {
-        fileTextResponse = {
-            file: req.query["filePath"],
-            text: "Example Text so far!"
+        filePath = req.query["filePath"]
+    } else {
+        res.status(400).send('Malformed client info');
+        return
+    }
+
+    // Grab file text
+    fs.readFile(filePath, 'utf8', function (err, data) {
+        if (err) {
+            winston.log('error', `Default getFileText failed with ${err}`);
+            res.status(500).send('Unable to get root file text!');
         }
 
-        res.status(200).send(JSON.stringify(fileTextResponse));
+        fileTextResponse = {
+            file: filePath,
+            text: data
+        }
 
-    } else {
-        // Optimistically assume they want root text.
-        fs.readFile(global.rootFile, 'utf8', function (err, data) {
-            if (err) {
-                winston.log('error', `Default getFileText failed with ${err}`);
-                res.status(500).send('Unable to get root file text!');
-            }
+        res.status(200).send(jsonUtil.stringifyEscape(fileTextResponse));
+    });
 
-            fileTextResponse = {
-                file: global.rootFile,
-                text: data
-            }
-
-            res.status(200).send(JSON.stringify(fileTextResponse));
-        });
-    }
 });
 
 /**
@@ -92,7 +98,7 @@ server.get('/api/getFileTextMetadata', (req: express.Request, res: express.Respo
         tssServer.scanFileForAllTokensPretty(req.query["filePath"])
             .then(tokenList => {
                 res.setHeader('Content-Type', 'application/json');
-                res.status(200).send(JSON.stringify(tokenList));
+                res.status(200).send(jsonUtil.stringifyEscape(tokenList));
             })
             .catch(err => {
                 winston.log('error', `getFileTextMetadata failed with ${err}`);
