@@ -31,3 +31,16 @@ pre {
     background-color: #a0a0ff;
     padding: 5px;
 }
+
+.FunctionKeyword {
+  color: #3031FE;
+}
+.ReturnKeyword {
+  color: #FE3030;
+}
+.ImportKeyword {
+  color: #54009E;
+}
+.AsKeyword {
+  color: #FCA1A1;
+}

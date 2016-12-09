@@ -67,8 +67,8 @@ function init() {
                             return makeRequest('/api/getFileTextMetadata', { filePath: filePath });
                         }).then(function (res) {
                             globals.currentTokens = jsonUtil.parseEscaped(res);
-                            return globals.currentTokens;
-                        }).then()["catch"](function (err) { return console.error(err); })];
+                            return globals.currentTokens[0];
+                        }).then(addSpanTags)["catch"](function (err) { return console.error(err); })];
                 case 1:
                     // Initial request to get the name of the file.
                     _a.sent();
@@ -76,6 +76,36 @@ function init() {
             }
         });
     });
+}
+/**
+ * addSpanTags adds span tags to the text on the page.
+ *
+ */
+function addSpanTags(orderedTokens) {
+    var lineNumber = 1;
+    var codeBox = document.getElementById('code-text-box');
+    codeBox.innerHTML = ''; // EMPTY OUT ALL THE CONTENTS!
+    for (var i = 0; i < orderedTokens.length; i++) {
+        var tempElement = document.createElement('span');
+        var currentToken = orderedTokens[i];
+        // Makes sure line breaks are in the right place.
+        if (currentToken && currentToken.start !== null && currentToken.start.line) {
+            while (currentToken.start.line >= lineNumber) {
+                lineNumber++;
+                codeBox.appendChild(document.createElement('br'));
+            }
+        }
+        // Adds the line and offset.
+        if (currentToken && currentToken.start) {
+            tempElement.id = currentToken.start.line.toString() + '-' + currentToken.start.offset.toString();
+        }
+        if (currentToken && currentToken.tokenType) {
+            tempElement.innerText = currentToken.tokenText;
+        }
+        ;
+        tempElement.className += " " + currentToken.tokenType;
+        codeBox.appendChild(tempElement);
+    }
 }
 /** These functions help update areas of the page. */
 var pageUtil;

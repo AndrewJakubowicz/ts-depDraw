@@ -20,7 +20,7 @@ async function init() {
     let textFileRequest = fileWeWant => {
         return makeRequest('/api/getFileText', { filePath: fileWeWant })
     }
-    
+
     // Initial request to get the name of the file.
     await makeRequest('/api/init')
         // Get the text for the file.
@@ -40,13 +40,44 @@ async function init() {
             return makeRequest('/api/getFileTextMetadata', { filePath: filePath })
         }).then((res: string) => {
             globals.currentTokens = jsonUtil.parseEscaped(res);
-            return globals.currentTokens
-        }).then()
+            return globals.currentTokens[0]
+        }).then(addSpanTags)
         .catch(err => console.error(err));
 }
 
+/**
+ * addSpanTags adds span tags to the text on the page.
+ * 
+ */
+function addSpanTags(orderedTokens) {
+  let lineNumber = 1;
+  let codeBox = document.getElementById('code-text-box');
 
+  codeBox.innerHTML = '';   // EMPTY OUT ALL THE CONTENTS!
 
+  for (let i = 0; i < orderedTokens.length; i++){
+    let tempElement = document.createElement('span');
+    let currentToken = orderedTokens[i];
+    
+    // Makes sure line breaks are in the right place.
+    if (currentToken && currentToken.start !== null && currentToken.start.line){
+      while(currentToken.start.line >= lineNumber){
+        lineNumber ++;
+        codeBox.appendChild(document.createElement('br'));
+      }
+    }
+    
+    // Adds the line and offset.
+    if (currentToken && currentToken.start){
+      tempElement.id = currentToken.start.line.toString() + '-' + currentToken.start.offset.toString();
+    }
+    if (currentToken && currentToken.tokenType) { tempElement.innerText = currentToken.tokenText; };
+    tempElement.className += " " + currentToken.tokenType;
+
+    codeBox.appendChild(tempElement);
+
+  }
+}
 
 
 
