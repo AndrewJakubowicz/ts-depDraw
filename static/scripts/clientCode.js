@@ -36,7 +36,102 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-init();
+// globals represents the data being represented on the page.
+var globals = {
+    displayText: "",
+    currentTokens: []
+};
+/** Function that starts on load. */
+function init() {
+    return __awaiter(this, void 0, void 0, function () {
+        var filePath, textFileRequest;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    textFileRequest = function (fileWeWant) {
+                        return makeRequest('/api/getFileText', { filePath: fileWeWant });
+                    };
+                    // Initial request to get the name of the file.
+                    return [4 /*yield*/, makeRequest('/api/init')
+                            .then(textFileRequest)
+                            .then(function (val) {
+                            var getFileTextRequest = jsonUtil.parseEscaped(val);
+                            pageUtil.updateCodeOnPage(getFileTextRequest.text);
+                            globals.displayText = getFileTextRequest.text;
+                            document.getElementById('code-file-title').innerText = getFileTextRequest.file;
+                            // Save the filePath returned to use with future functions.
+                            filePath = getFileTextRequest.file;
+                            // Now we want to highlight the words that might have definitions attached to them.
+                            // This call will return a json object that specifies line number, offset and length
+                            // of identifier.
+                            return makeRequest('/api/getFileTextMetadata', { filePath: filePath });
+                        }).then(function (res) {
+                            globals.currentTokens = jsonUtil.parseEscaped(res);
+                            return globals.currentTokens;
+                        }).then()["catch"](function (err) { return console.error(err); })];
+                case 1:
+                    // Initial request to get the name of the file.
+                    _a.sent();
+                    return [2 /*return*/];
+            }
+        });
+    });
+}
+/** These functions help update areas of the page. */
+var pageUtil;
+(function (pageUtil) {
+    /**
+     * Updates the code tag on the page.
+     *
+     * @param {string} textData Text to place in the code box.
+     */
+    function updateCodeOnPage(textData) {
+        document.getElementById("code-text-box").innerText = '\n' + textData;
+    }
+    pageUtil.updateCodeOnPage = updateCodeOnPage;
+})(pageUtil || (pageUtil = {}));
+/**
+ * makeRequest is a helper function that calls a url.
+ * Code adapted from: http://stackoverflow.com/a/30008115
+ *
+ * @param {string} url Relative url to call.
+ * @param {obj} [params] key/values to pass into the url.
+ * @returns {Promise} promise that containes the result of the api call.
+ */
+function makeRequest(url, params) {
+    return new Promise(function (resolve, reject) {
+        /**
+         * Set up the parameters so they can be passed into api call.
+         */
+        var stringParams = '';
+        if (params && typeof params == "object") {
+            stringParams = Object.keys(params).map(function (key) {
+                return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+            }).join('&');
+        }
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url + '?' + stringParams);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function () {
+            if (this.status >= 200 && this.status < 300) {
+                resolve(xhr.response);
+            }
+            else {
+                reject({
+                    status: this.status,
+                    statusText: xhr.statusText
+                });
+            }
+        };
+        xhr.onerror = function () {
+            reject({
+                status: this.status,
+                statusText: xhr.statusText
+            });
+        };
+        xhr.send();
+    });
+}
 /**
  * Helper functions to parse JSON.
  *
@@ -98,76 +193,3 @@ var jsonUtil;
     }
     jsonUtil.parseEscaped = parseEscaped;
 })(jsonUtil || (jsonUtil = {}));
-function init() {
-    return __awaiter(this, void 0, void 0, function () {
-        var filePath, textFileRequest;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    textFileRequest = function (fileWeWant) {
-                        return makeRequest('/api/getFileText', { filePath: fileWeWant });
-                    };
-                    return [4 /*yield*/, makeRequest('/api/init')
-                            .then(textFileRequest)
-                            .then(function (val) {
-                            var getFileTextRequest = jsonUtil.parseEscaped(val);
-                            updateCodeOnPage(getFileTextRequest.text);
-                            document.getElementById('code-file-title').innerText = getFileTextRequest.file;
-                            // Save the filePath returned to use with future functions.
-                            filePath = getFileTextRequest.file;
-                            // Now we want to highlight the words that might have definitions attached to them.
-                            // This call will return a json object that specifies line number, offset and length
-                            // of identifier.
-                            return makeRequest('/api/getFileTextMetadata', { filePath: filePath });
-                        }).then(function (res) {
-                            console.log(jsonUtil.parseEscaped(res));
-                        })["catch"](function (err) { return console.error(err); })];
-                case 1:
-                    _a.sent();
-                    return [2 /*return*/];
-            }
-        });
-    });
-}
-/**
- * makeRequest is a helper function that calls a url.
- * Code adapted from: http://stackoverflow.com/a/30008115
- */
-function makeRequest(url, params) {
-    return new Promise(function (resolve, reject) {
-        /**
-         * Set up the parameters so they can be passed into api call.
-         */
-        var stringParams = '';
-        if (params && typeof params == "object") {
-            stringParams = Object.keys(params).map(function (key) {
-                return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-            }).join('&');
-        }
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", url + '?' + stringParams);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onload = function () {
-            if (this.status >= 200 && this.status < 300) {
-                resolve(xhr.response);
-            }
-            else {
-                reject({
-                    status: this.status,
-                    statusText: xhr.statusText
-                });
-            }
-        };
-        xhr.onerror = function () {
-            reject({
-                status: this.status,
-                statusText: xhr.statusText
-            });
-        };
-        xhr.send();
-    });
-}
-// NewLine before text preserves formatting.
-function updateCodeOnPage(textData) {
-    document.getElementById("code-text-box").innerText = '\n' + textData;
-}
