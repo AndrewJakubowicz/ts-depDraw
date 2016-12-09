@@ -65,16 +65,19 @@ export class Tsserver {
             });
 
             // Grab first callback and data.
-            let [callback, command] = this.operations.shift(),
+            let [callback, requestText] = this.operations.shift(),
                 chunk = allData.shift();
 
             while (allData.length > 0) {
                 winston.log("debug", `Tsserver response: Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`);
-                callback(null, chunk, command);
-                [callback, command] = this.operations.shift();
+                if (allData.length !== this.operations.length) {
+                    winston.debug(`Tsserver response: Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`, allData, this.operations);
+                }
+                callback(null, chunk, requestText);
+                [callback, requestText] = this.operations.shift();
                 chunk = allData.shift();
             }
-            callback(null, chunk, command);
+            callback(null, chunk, requestText);
         });
 
 
@@ -208,7 +211,7 @@ export class Tsserver {
                     let token = scanner.scan();
                     let tokenStart = scanner.getTokenPos();
                     while (token != ts.SyntaxKind.EndOfFileToken) {
-                        winston.log("trace", `Iterating tokens at position (${lineNum}, ${tokenStart})`)         
+                        winston.log("trace", `Iterating tokens at position (${lineNum}, ${tokenStart})`)
                         if (token === ts.SyntaxKind.Identifier) {
                             // Tokens seem to start with whitespace. Adding one allows the definition to be found.
                             promises.push(this.lookUpReferences(tssFilePath, lineNum, tokenStart + 1,
@@ -237,6 +240,7 @@ export class Tsserver {
             rl.on('close', () => {
                 // Process promises after reading file has concluded.
                 return Promise.all(promises).then(function (...responses) {
+                    winston.log('trace', `All promises have resolved.`)
                     /**
                      * Arguments are all here in arguments[0], arguments[1].....
                      * Thank you: http://stackoverflow.com/a/10004137
@@ -277,7 +281,7 @@ export class Tsserver {
      */
     lookUpReferences(filePath: string, lineNum: number, tokenOffset: number, reqBody: RequestBody) {
         return new Promise<[string | Buffer, string]>((fulfill, reject) => {
-            this.references(filePath, lineNum, tokenOffset, function (err, res, req) {
+            this.references(filePath, lineNum, tokenOffset, (err, res, req) => {
                 if (err) reject(err);
                 else fulfill([mergeRequestWithBody(req, reqBody), res]);
             });
@@ -313,28 +317,29 @@ export class Tsserver {
 
     /**
      * addEndPosition adds an end Position to defined tokens.
-     * 
+     * definedStart
+     * definedEnd
      * Assumes that the file has already been opened in tsserver.
      */
     addEndPosition(token: TokenIdentifierData, filePath: string) {
-        winston.log('trace', `addEndPosition method used for ${JSON.stringify(token)}`);
+        winston.log('trace', `addEndPosition method used for token:`, token);
+        if (!token.isDefinition) {
+            return Promise.resolve(token);
+        }
         return new Promise<TokenIdentifierData>((fulfill, reject) => {
-            if (!token.isDefinition) {
-                fulfill(token);
-            }
-            let definitionResult = new Promise((fulfillInside, rejectInside) => {
-                this.definition(filePath, token.start.line, token.start.offset, function (err, res, req) {
-                    if (err) rejectInside(err);
-                    else fulfillInside(JSON.parse(res));
-                });
+            this.definition(filePath, token.start.line, token.start.offset, function (err, res, req) {
+                if (err) reject(err);
+                else return fulfill(JSON.parse(res));
             });
-            definitionResult.then(definitionResponse => {
-                winston.log('debug', `definitionResponse = ${JSON.stringify(definitionResponse)}`)
-                token.end = definitionResponse.body[0].end;
-                fulfill(token)
-            }).catch(err => {
-                winston.log('error', `addEndPosition failed with ${err}`);
-            });
+        }).then(definitionResponse => {
+            winston.log('debug', `definitionResponse = `, definitionResponse)
+            token.definedEnd = definitionResponse.body[0].end;
+            token.definedStart = definitionResponse.body[0].start;
+            token.definedFile = definitionResponse.body[0].file;
+            winston.log('debug', `Modified token:`, token);
+            return token
+        }).catch(err => {
+            winston.log('error', `addEndPosition failed with ${err}`);
         });
     }
 
@@ -351,7 +356,7 @@ export class Tsserver {
         for (let i = 0; i < reqRes.length; i++) {
             request = JSON.parse(reqRes[i][0]);
             response = JSON.parse(reqRes[i][1])
-            if (!response.success){
+            if (!response.success) {
                 combined.push(compressFailedToken(request, response))
             } else if (request.command === "addToken") {
                 combined.push(compressAddToken(request, response))
@@ -394,7 +399,7 @@ function mergeRequestWithBody(req: string, body: RequestBody): string {
 
 function initScannerState(): ts.Scanner {
     // TODO: scanner matches tsconfig.
-    let scanner = ts.createScanner(ts.ScriptTarget.Latest, true);
+    let scanner = ts.createScanner(ts.ScriptTarget.Latest, false);
     scanner.setOnError((message, length) => {
         winston.warn(`${JSON.stringify(message)}`);
     });
@@ -448,7 +453,9 @@ export interface TokenData {
  */
 export interface TokenIdentifierData extends TokenData {
     isDefinition: boolean
-    end?: Position
+    definedEnd?: Position
+    definedStart?: Position
+    definedFile?: string
     references: any[]
 }
 
@@ -467,7 +474,7 @@ export function compressReferencesToken(request, response) {
 
 export function createReferenceToken(request, response): TokenIdentifierData {
     // If success failed then it's a comment or useless.
-    if (!response.success){
+    if (!response.success) {
         winston.log('error', `
 Something has gone fatally wrong.
 Token must be successful to be passed into createReferenceToken.`.trim());
