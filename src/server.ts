@@ -23,6 +23,10 @@ const PORT = 8080;
 let server = express();
 let tssServer = new tss.Tsserver();
 
+// TODO: make this not in memory
+let fileMetaData: Map<string, string> = new Map();
+let fileText: Map<string, string> = new Map();
+
 // This sets up a virtual path from '/' to the static directory.
 // Adapted from https://expressjs.com/en/starter/static-files.html
 // If this middleware fails, it will fall through to the next handler.
