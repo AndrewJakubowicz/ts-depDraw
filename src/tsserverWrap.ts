@@ -200,10 +200,11 @@ export class Tsserver {
              * Todo: Populate a cache to prevent the same file getting read over and over.
              *      - Important due to a single file containing many modules or namespaces.
              */
+            let scanner = initScannerState();
             rl.on('line', line => {
                 lineNum++;
                 if (!lineStartAndEnd || (lineStartAndEnd[0] <= lineNum && lineStartAndEnd[1] >= lineNum)) {
-                    let scanner = initScannerState(line);
+                    scanner.setText(line);
                     let token = scanner.scan();
                     let tokenStart = scanner.getTokenPos();
                     while (token != ts.SyntaxKind.EndOfFileToken) {
@@ -391,10 +392,9 @@ function mergeRequestWithBody(req: string, body: RequestBody): string {
     return JSON.stringify(newReq);
 }
 
-function initScannerState(text: string): ts.Scanner {
+function initScannerState(): ts.Scanner {
     // TODO: scanner matches tsconfig.
     let scanner = ts.createScanner(ts.ScriptTarget.Latest, true);
-    scanner.setText(text);
     scanner.setOnError((message, length) => {
         winston.warn(`${JSON.stringify(message)}`);
     });
