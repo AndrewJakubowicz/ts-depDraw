@@ -33,6 +33,24 @@ interface RequestBody {
     filePath: string;
 }
 
+// Basic command used by Open.
+interface SimpleCommand {
+    seq: number
+    type: string
+    command: string
+    arguments: {
+        file: string
+    }
+}
+
+// Basic command used by define, reference
+interface LookupCommand extends SimpleCommand {
+    arguments: {
+        file: string
+        line: number
+        offset: number
+    }
+}
 
 /**
  * Wrapper for tsserver.
@@ -105,9 +123,19 @@ export class Tsserver {
      * If you don't open the file before trying to find definitions in it, this will fail.
      */
     definition(filePath: string, line: number, column: number, callback: (err: Error, response: string, request: string) => void) {
-        let command = `{"seq":${this.seq},"type":"request","command":"definition","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`;
+        let commandObj: LookupCommand = {
+            seq: this.seq,
+            type: "request",
+            command: "definition",
+            arguments: {
+                file: path.join(filePath),
+                line: line,
+                offset: column
+            }
+        }
+        let command = JSON.stringify(commandObj);
         winston.log("data", `SENDING TO TSSERVER: "${command}"`);
-        this.proc.stdin.write(command);
+        this.proc.stdin.write(command + '\n');
         this.operations.push([callback, command]);
         this.seq++;
     }
@@ -116,16 +144,26 @@ export class Tsserver {
      * Returns a response showing what implements something.
      */
     references(filePath: string, line: number, column: number, callback: (err: Error, response: string, request: string) => void) {
-        let command = `{"seq":${this.seq},"type":"request","command":"references","arguments":{"file":"${filePath}", "line":${line}, "offset": ${column}}}\n`;
+        let commandObj: LookupCommand = {
+            seq: this.seq,
+            type: "request",
+            command: "references",
+            arguments: {
+                file: path.join(filePath),
+                line: line,
+                offset: column
+            }
+        }
+        let command = JSON.stringify(commandObj);
         winston.log("data", `SENDING TO TSSERVER: "${command}"`);
-        this.proc.stdin.write(command);
+        this.proc.stdin.write(command + '\n');
         this.operations.push([callback, command]);
         this.seq++;
     }
 
 
     open(filePath: string, callback: (err: Error, response: string, request: string) => void) {
-        let command = `{"seq":${this.seq},"type":"request","command":"open","arguments":{"file":"${filePath}"}}\n`;
+        let command = `{"seq":${this.seq},"type":"request","command":"open","arguments":{"file":"${path.join(filePath)}"}}\n`;
         winston.log("data", `SENDING TO TSSERVER: "${command}"`);
         this.proc.stdin.write(command);
         this.operations.push([callback, command]);
