@@ -21,7 +21,7 @@ global.tsconfigRootDir = '/Users/Spyr1014/Projects/TypeScript/ts-depDraw';
 global.rootFile = 'tests/examples/ex3.ts'
 
 
-describe('Basic uses of a tsserver:', function () {
+describe.only('Basic uses of a tsserver:', function () {
     this.timeout(10000);
     var s = new tss.Tsserver();
 
@@ -68,6 +68,13 @@ describe('Basic uses of a tsserver:', function () {
         s.references('tests/examples/ex5.ts', 7, 17, function (err, d, req) {
             captured = d.toString();
             expect(captured).to.eql('{"seq":0,"type":"response","command":"references","request_seq":4,"success":true,"body":{"refs":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/tests/examples/ex3.ts","start":{"line":7,"offset":5},"lineText":"ex5.betterConsoleLog(adderTest(1, 2));","end":{"line":7,"offset":21},"isWriteAccess":false,"isDefinition":false},{"file":"tests/examples/ex5.ts","start":{"line":7,"offset":17},"lineText":"export function betterConsoleLog(a){","end":{"line":7,"offset":33},"isWriteAccess":true,"isDefinition":true}],"symbolName":"betterConsoleLog","symbolStartOffset":17,"symbolDisplayString":"function betterConsoleLog(a: any): void"}}');
+            done();
+        });
+    });
+
+    it('Implements function', function(done){
+        s.implements('tests/examples/ex4.ts', 4, 17, function(err, res, req) {
+            console.log(res, req);
             done();
         });
     });

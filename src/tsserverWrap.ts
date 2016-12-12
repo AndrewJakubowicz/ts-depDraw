@@ -115,7 +115,26 @@ export class Tsserver {
         });
     }
 
-
+    /**
+     * Implements allows use of implements.
+     */
+    implements(filePath: string, line: number, column: number, callback: (err: Error, response: string, request: string) => void) {
+        let commandObj: LookupCommand = {
+            seq: this.seq,
+            type: "request",
+            command: "implementation",
+            arguments: {
+                file: path.join(filePath),
+                line: line,
+                offset: column
+            }
+        }
+        let command = JSON.stringify(commandObj);
+        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
+        this.proc.stdin.write(command + '\n');
+        this.operations.push([callback, command]);
+        this.seq++;
+    }
 
     /**
      * Allows goto definition using tsserver.
