@@ -12,6 +12,12 @@ import * as ts from "TypeScript";
 import * as child_process from "child_process";
 import * as winston from "./appLogger";
 
+
+/**
+ * CACHE for the file tokens.
+ */
+let FILE_TOKENS_ARRAY: Map<string, any> = new Map();
+
 /**
  * methods fileScanner accepts
  */
@@ -689,19 +695,22 @@ function initScannerState() : ts.Scanner {
  */
 export function scanFileForIdentifierTokens (filePath : string) : Promise < any > {
     return new Promise((resolve, reject) => {
-        /**
-             * Below code doesn't use root of directory as reference.
-             * TODO: make sure this path reflects the root of the directory we are trying to traverse.
-             * Answer here: http://stackoverflow.com/a/18721515
-             */
 
-        winston.log("trace", `Running scanFileForAllTokensBetween on ${filePath}`);
+        // Get tokens from cache if exists.
+        winston.log('debug', `Checking if cache exists for file ${filePath}.`, FILE_TOKENS_ARRAY);
+        if (FILE_TOKENS_ARRAY.has(filePath)){
+            winston.log('debug', `cache found. Resolving with: `, FILE_TOKENS_ARRAY.get(filePath));
+            return resolve(FILE_TOKENS_ARRAY.get(filePath));
+        }
+
+
+        winston.log("trace", `Running scanFileForIdentifierTokens on ${filePath}`);
 
         /**
-             * Below code doesn't use root of directory as reference.
-             *
-             * Modified using answer: http://stackoverflow.com/a/18721515
-             */
+         * Below code doesn't use root of directory as reference.
+         *
+         * Modified using answer: http://stackoverflow.com/a/18721515
+         */
         try {
             assert.ok(global.tsconfigRootDir, "Global object tsconfigRootDir must be set.");
         } catch (err) {
@@ -710,8 +719,9 @@ export function scanFileForIdentifierTokens (filePath : string) : Promise < any 
 
         // Grabbing to root path.
         let appDir = global.tsconfigRootDir;
-        filePath = path.join(appDir, filePath);
         let tssFilePath = filePath;
+        filePath = path.join(appDir, filePath);
+
         if (!fs.existsSync(filePath)) {
             winston.log("debug", `File doesn't exist: ${filePath}`);
             return reject(new Error(`File doesn't exist: ${filePath}`));
@@ -722,7 +732,7 @@ export function scanFileForIdentifierTokens (filePath : string) : Promise < any 
         // Read file and scan for tokens.
         fs.readFile(filePath, 'utf-8', (err, data) => {
             if (err) {
-                reject(new Error(`Failed to read file for tokens: ${err}`));
+                return reject(new Error(`Failed to read file for tokens: ${err}`));
             }
             let tokenResults = [];
             let scanner = initScannerState();
@@ -753,7 +763,13 @@ export function scanFileForIdentifierTokens (filePath : string) : Promise < any 
                 token = scanner.scan();
             }
 
-            resolve(tokenResults);
+            // Store tokens in cache and return tokens. Just check that it still doesn't exist.
+            winston.log('debug', `Checking cache for ${tssFilePath}`, FILE_TOKENS_ARRAY);
+            if (!FILE_TOKENS_ARRAY.has(tssFilePath)){
+                winston.log('debug', `Adding ${tssFilePath}.`);
+                FILE_TOKENS_ARRAY.set(tssFilePath, tokenResults);
+            }
+            return resolve(tokenResults);
         });
     });
 }

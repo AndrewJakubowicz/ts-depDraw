@@ -3,6 +3,21 @@
  * 
  * My first attempt to put together a nodejs server.
  * 
+ * 
+ * 
+ * API:
+ * 
+ * 
+ * /api/init
+ *  - returns the root file for the project.
+ * 
+ * /api/getFileText
+ *  - returns plain text of the file.
+ * 
+ * /api/getTextIdentifierTokensLocations
+ *  - returns token data. Can be used to recreate the display.
+ *
+ * 
  */
 
 import * as http from 'http';
@@ -69,7 +84,7 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
     // Grab file text
     fs.readFile(filePath, 'utf8', function (err, data) {
         if (err) {
-            winston.log('error', `Default getFileText failed with ${err}`);
+            winston.log('error', `Default getFileText failed with`, err, req);
             res.status(500).send('Unable to get root file text!');
         }
 
@@ -100,10 +115,13 @@ server.get('/api/getTextIdentifierTokensLocations', (req: express.Request, res: 
                 res.status(500).send('Unable to text IdentifierTokensLocations!');
             });
     } else {
-        winston.log('error', `getTextIdentifierTokensLocations no filePath`);
+        winston.log('error', `no filePath given in request`, req);
         res.status(400).send('Malformed client input.');
     }
 });
+
+
+
 
 server.listen(PORT, (err) => {
     if (err) {
