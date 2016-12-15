@@ -722,14 +722,15 @@ export function scanFileForIdentifierTokens (filePath : string) : Promise < any 
             let sourceFile = ts.createSourceFile(path.basename(filePath), data, ts.ScriptTarget.Latest)
 
             scanner.setText(data);
-            let token = scanner.scan();
             let tokenPositionStart = ts.getLineAndCharacterOfPosition(sourceFile, scanner.getTextPos());
+            let token = scanner.scan();
             let tokenDetails;
 
             while (token != ts.SyntaxKind.EndOfFileToken) {
                 winston.log("trace", `Iterating tokens at position (${tokenPositionStart.line + 1}, ${tokenPositionStart.character})`);
                 // Push the token onto the array.
                 tokenPositionStart.line += 1;   // line number is 0 based.
+                tokenPositionStart.character += 1;
                 tokenDetails = {
                     text: scanner.getTokenText(),
                     type: ts.SyntaxKind[token],
@@ -738,8 +739,8 @@ export function scanFileForIdentifierTokens (filePath : string) : Promise < any 
                 tokenResults.push(tokenDetails);
 
                 // Get the next token
-                token = scanner.scan();
                 tokenPositionStart = ts.getLineAndCharacterOfPosition(sourceFile, scanner.getTextPos());
+                token = scanner.scan();
             }
 
             resolve(tokenResults);
