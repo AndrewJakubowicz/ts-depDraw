@@ -27,6 +27,7 @@ import * as path from 'path';
 
 import * as winston from "./appLogger";
 import * as tss from "./tsserverWrap";
+import * as jsonUtil from './util/jsonUtil';
 
 // Server creation
 let server = express();
@@ -46,7 +47,41 @@ server.use('/', express.static(path.join(__dirname, '..', 'static')));
 server.get('/api/init', (req: express.Request, res: express.Response) => {
     winston.log('trace', `Responding to /api/init`, global.rootFile);
     res.setHeader('Content-Type', 'application/json');
-    res.status(200).send(global.rootFile);
+    res.status(200).send(jsonUtil.stringifyEscape(global.rootFile));
+});
+
+
+/**
+ * Loads in plain text of the file.
+ */
+server.get('/api/getFileText', (req: express.Request, res: express.Response) => {
+    winston.log('data', `Query for getFileText from url: ${req.url}`);
+
+    let filePath: string;
+
+    /** If filePath exists then lookup that files text. */
+    if (req.query.hasOwnProperty('filePath')) {
+        filePath = req.query["filePath"]
+    } else {
+        res.status(400).send('Malformed client info');
+        return
+    }
+
+    // Grab file text
+    fs.readFile(filePath, 'utf8', function (err, data) {
+        if (err) {
+            winston.log('error', `Default getFileText failed with ${err}`);
+            res.status(500).send('Unable to get root file text!');
+        }
+
+        let fileTextResponse = {
+            file: filePath,
+            text: data
+        }
+
+        res.status(200).send(jsonUtil.stringifyEscape(fileTextResponse));
+    });
+
 });
 
 
@@ -61,7 +96,7 @@ server.get('/api/getTextIdentifierTokensLocations', (req: express.Request, res: 
         tss.scanFileForIdentifierTokens(req.query["filePath"])
             .then(tokenList => {
                 res.setHeader('Content-Type', 'application/json');
-                res.status(200).send(JSON.stringify(tokenList));
+                res.status(200).send(jsonUtil.stringifyEscape(tokenList));
             })
             .catch(err => {
                 winston.log('error', `getTextIdentifierTokensLocations failed with ${err}`);

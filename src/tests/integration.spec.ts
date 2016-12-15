@@ -8,19 +8,10 @@ import * as server from '../server';
 import * as http from 'http';
 import * as child_process from 'child_process';
 
-// I am monkey patching this for tests. This will prevent the use of mocha's
-// location and instead mock project directory.
-require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/examples/`;
-
-/**
- * TODO: Make it so that anyone can test.
- */
-global.tsconfigRootDir = '/Users/Spyr1014/Projects/TypeScript/ts-depDraw';
-global.rootFile = 'examples/ex3.ts'
+import * as jsonUtil from '../util/jsonUtil';
 
 describe.only('Server api:', function () {
-
-    this.timeout(5000);
+    this.timeout(1500);
     let serverProcess : child_process.ChildProcess;
 
     beforeEach(function (done) {
@@ -48,7 +39,24 @@ describe.only('Server api:', function () {
         done();
     })
 
-    it('Call init on server', function (done) {
+    it('Call init on server with escaping', function (done) {
+        http
+            .get(`http://localhost:8080/api/init`, function (res) {
+                res.on('data', (data) => {
+                    return Promise
+                        .resolve()
+                        .then(() => {
+                            expect(jsonUtil.parseEscaped(data.toString()))
+                                .to
+                                .equal(jsonUtil.parseEscaped('"examples%2Fex2.ts"'));
+                        })
+                        .then(done)
+                        .catch(done)
+                });
+            });
+    });
+
+    it('Call init on server without escaping', function (done) {
         http
             .get(`http://localhost:8080/api/init`, function (res) {
                 res.on('data', (data) => {
@@ -57,7 +65,26 @@ describe.only('Server api:', function () {
                         .then(() => {
                             expect(data.toString())
                                 .to
-                                .equal('examples/ex2.ts');
+                                .equal('"examples%2Fex2.ts"');
+                        })
+                        .then(done)
+                        .catch(done)
+                });
+            });
+    });
+
+
+    it('Call getFileText on server', function (done) {
+        http
+            .get(`http://localhost:8080/api/getFileText?filePath=examples/ex2.ts`, function (res) {
+                res.on('data', (data) => {
+                    return Promise
+                        .resolve()
+                        .then(() => {
+                            expect(jsonUtil.parseEscaped(data.toString()))
+                                .to
+                                .deep
+                                .equal(jsonUtil.parseEscaped('{"file":"examples%2Fex2.ts","text":"%0Afunction%20findMe()%7B%0A%20%20%20%20return%0A%7D%0A%0Aimport%20*%20as%20example1%20from%20%22.%2Fex1%22%3B%0A%0A%0AfindMe()%3B"}'));
                         })
                         .then(done)
                         .catch(done)
