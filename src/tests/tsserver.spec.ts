@@ -10,8 +10,8 @@ import * as jsonUtil from "../util/jsonUtil";
 var fs = require('fs');
 import * as path from 'path';
 
-// I am monkey patching this for tests. (oh god :P) This will prevent the use of
-// mocha's location and mock project directory.
+// I am monkey patching this for tests. This will prevent the use of
+// mocha's location and instead mock project directory.
 require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/examples/`;
 
 /**
@@ -19,6 +19,10 @@ require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/examples
  */
 global.tsconfigRootDir = '/Users/Spyr1014/Projects/TypeScript/ts-depDraw';
 global.rootFile = 'examples/ex3.ts'
+
+
+
+
 
 describe('Basic uses of a tsserver:', function () {
     this.timeout(10000);

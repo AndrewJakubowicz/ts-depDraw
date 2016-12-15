@@ -10,6 +10,7 @@ var fs = require('fs');
 var winston = require('../lib/appLogger');
 
 global.tsconfigRootDir = process.cwd();
+global.startServer = false;
 
 
 
@@ -19,7 +20,10 @@ winston.log('debug', `Working directory set at: ${global.tsconfigRootDir}`);
     var userInputs = process.argv.slice(2);
 
     if (userInputs.length !== 1 || userInputs[0] == '-h' || userInputs[0] == '--help'){
-        console.log(`
+        console.error(`
+    Error: Please input a file with a '.ts' extension to start the server.
+
+
     Usage: ts-depDraw <file path>
 
     Current limitations:
@@ -63,5 +67,6 @@ ts-depDraw must be initialized from a directory containing a tsconfig.
     global.rootFile = filePath;
 
     winston.log('trace', 'User input correct, starting program.');
-    require('../');
+    global.startServer = true;
+    require('../index');
 })();

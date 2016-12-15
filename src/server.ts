@@ -28,10 +28,6 @@ import * as path from 'path';
 import * as winston from "./appLogger";
 import * as tss from "./tsserverWrap";
 
-// Port defined
-// TODO: add to config.
-const PORT = 8080;
-
 // Server creation
 let server = express();
 let tssServer = new tss.Tsserver();
@@ -48,6 +44,8 @@ server.use('/', express.static(path.join(__dirname, '..', 'static')));
  * This can be called to get the first file that the user initiated the server on.
  */
 server.get('/api/init', (req: express.Request, res: express.Response) => {
+    winston.log('trace', `Responding to /api/init`, global.rootFile);
+    res.setHeader('Content-Type', 'application/json');
     res.status(200).send(global.rootFile);
 });
 
@@ -83,11 +81,4 @@ server.get('/api/getTextIdentifierTokensLocations', (req: express.Request, res: 
 
 
 
-
-
-server.listen(PORT, (err) => {
-    if (err) {
-        return console.log(`Error starting server: ${err}`);
-    }
-    console.log(`Server started and listening on port: ${PORT}`);
-});
+export let SERVER = server;
