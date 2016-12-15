@@ -23,25 +23,27 @@ describe.only('Server api:', function () {
     this.timeout(5000);
     let serverProcess : child_process.ChildProcess;
 
-
     beforeEach(function (done) {
         serverProcess = child_process.spawn('npm', ['start', 'examples/ex2.ts']);
 
-        serverProcess.stdout.on('data', function(data) {
-            winston.log('trace', `Integration Test stdout: ${data}.`);
-            // Calls the done callback as soon as server has started. (Reads the freaking stdout of the process).
-            if (data.toString().indexOf('Server started and listening') !== -1){
-                done()
-            }
-        });
+        serverProcess
+            .stdout
+            .on('data', function (data) {
+                winston.log('trace', `Integration Test stdout: ${data}.`);
+                // Calls the done callback as soon as server has started. (Reads the freaking
+                // stdout of the process).
+                if (data.toString().indexOf('Server started and listening') !== -1) {
+                    done()
+                }
+            });
 
-        serverProcess.on('close', function() {
+        serverProcess.on('close', function () {
             winston.log('trace', `Closed server process`);
         });
 
     });
 
-    afterEach(function(done){
+    afterEach(function (done) {
         serverProcess.kill();
         done();
     })
@@ -49,23 +51,17 @@ describe.only('Server api:', function () {
     it('Call init on server', function (done) {
         http
             .get(`http://localhost:8080/api/init`, function (res) {
-                winston.log('trace', `Call init on server test response:`, res);
-                done();
+                res.on('data', (data) => {
+                    return Promise
+                        .resolve()
+                        .then(() => {
+                            expect(data.toString())
+                                .to
+                                .equal('examples/ex2.ts');
+                        })
+                        .then(done)
+                        .catch(done)
+                });
             });
     });
-    it('Call init on server', function (done) {
-        http
-            .get(`http://localhost:8080/api/init`, function (res) {
-                winston.log('trace', `Call init on server test response:`, res);
-                done();
-            });
-    });
-    it('Call init on server', function (done) {
-        http
-            .get(`http://localhost:8080/api/init`, function (res) {
-                winston.log('trace', `Call init on server test response:`, res);
-                done();
-            });
-    });
-
 });
