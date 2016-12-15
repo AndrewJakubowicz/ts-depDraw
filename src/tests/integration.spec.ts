@@ -19,39 +19,50 @@ global.tsconfigRootDir = '/Users/Spyr1014/Projects/TypeScript/ts-depDraw';
 global.rootFile = 'examples/ex3.ts'
 
 describe.only('Server api:', function () {
+
+    this.timeout(5000);
     let serverProcess : child_process.ChildProcess;
-    before(function () {
-        serverProcess = child_process.spawn('npm', ['start']);
-        serverProcess.on('data', function(data) {
+
+
+    beforeEach(function (done) {
+        serverProcess = child_process.spawn('npm', ['start', 'examples/ex2.ts']);
+
+        serverProcess.stdout.on('data', function(data) {
             winston.log('trace', `Integration Test stdout: ${data}.`);
+            // Calls the done callback as soon as server has started. (Reads the freaking stdout of the process).
+            if (data.toString().indexOf('Server started and listening') !== -1){
+                done()
+            }
         });
+
         serverProcess.on('close', function() {
-            winston.log('trace', `closed node process`);
+            winston.log('trace', `Closed server process`);
         });
+
     });
 
-    after(function(done){
+    afterEach(function(done){
         serverProcess.kill();
         done();
     })
 
     it('Call init on server', function (done) {
         http
-            .get(`http://localhost:${server.PORT}/api/init`, function (res) {
+            .get(`http://localhost:8080/api/init`, function (res) {
                 winston.log('trace', `Call init on server test response:`, res);
                 done();
             });
     });
     it('Call init on server', function (done) {
         http
-            .get(`http://localhost:${server.PORT}/api/init`, function (res) {
+            .get(`http://localhost:8080/api/init`, function (res) {
                 winston.log('trace', `Call init on server test response:`, res);
                 done();
             });
     });
     it('Call init on server', function (done) {
         http
-            .get(`http://localhost:${server.PORT}/api/init`, function (res) {
+            .get(`http://localhost:8080/api/init`, function (res) {
                 winston.log('trace', `Call init on server test response:`, res);
                 done();
             });
