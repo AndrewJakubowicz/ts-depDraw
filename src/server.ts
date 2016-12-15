@@ -23,9 +23,6 @@ const PORT = 8080;
 let server = express();
 let tssServer = new tss.Tsserver();
 
-// TODO: make this not in memory
-let FILEMETADATA: Map<string, string> = new Map();
-let FILETEXT: Map<string, string> = new Map();
 
 // This sets up a virtual path from '/' to the static directory.
 // Adapted from https://expressjs.com/en/starter/static-files.html
@@ -43,11 +40,8 @@ server.get('/api/init', (req: express.Request, res: express.Response) => {
 /**
  * This is the api used to load the code files into the browser.
  * 
- * Default:
- *  If there is no fileName supplied, the api responds with the global.rootFile
- *  filePath.
  * 
- * This cannot just return plain text. This returns a list of all the text.
+ * This doesn't just return plain text. This returns a list of all the text.
  * This text is lumped with an object.
  * Each token has this shape:
  *      - tokenText
@@ -86,26 +80,27 @@ server.get('/api/getFileText', (req: express.Request, res: express.Response) => 
 
         res.status(200).send(jsonUtil.stringifyEscape(fileTextResponse));
     });
-
 });
 
 /**
- * getFileTextMetaData returns the text in a specific file, with token information.
+ * getTextIdentifierTokensLocations returns the text in a specific file, with token information.
+ * 
+ * This returns token type and start of each token {line: number, offset: number}.
  */
-server.get('/api/getFileTextMetadata', (req: express.Request, res: express.Response) => {
-    winston.log('info', `Query for getFileTextMetaData: ${req.query["filePath"]}`);
+server.get('/api/getTextIdentifierTokensLocations', (req: express.Request, res: express.Response) => {
+    winston.log('info', `Query for getTextIdentifierTokensLocations: ${req.query["filePath"]}`);
     if (req.query.hasOwnProperty('filePath')) {
-        tssServer.scanFileForAllTokensPretty(req.query["filePath"])
+        tss.scanFileForIdentifierTokens(req.query["filePath"])
             .then(tokenList => {
                 res.setHeader('Content-Type', 'application/json');
                 res.status(200).send(jsonUtil.stringifyEscape(tokenList));
             })
             .catch(err => {
-                winston.log('error', `getFileTextMetadata failed with ${err}`);
-                res.status(500).send('Unable to get text metadata!');
+                winston.log('error', `getTextIdentifierTokensLocations failed with ${err}`);
+                res.status(500).send('Unable to text IdentifierTokensLocations!');
             });
     } else {
-        winston.log('error', `getFileTextMetadata no filePath`);
+        winston.log('error', `getTextIdentifierTokensLocations no filePath`);
         res.status(400).send('Malformed client input.');
     }
 });
