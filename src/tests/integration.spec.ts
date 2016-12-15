@@ -10,8 +10,13 @@ import * as child_process from 'child_process';
 
 import * as jsonUtil from '../util/jsonUtil';
 
+
+/**
+ * These tests open and close the program every time,
+ * keeping them 'pure'.
+ */
 describe.only('Server api:', function () {
-    this.timeout(1500);
+    this.timeout(4000);
     let serverProcess : child_process.ChildProcess;
 
     beforeEach(function (done) {
