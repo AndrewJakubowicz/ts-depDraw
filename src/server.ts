@@ -17,7 +17,6 @@
  * /api/getTextIdentifierTokensLocations
  *  - returns token data. Can be used to recreate the display.
  *
- *
  */
 
 import * as http from 'http';
