@@ -28,23 +28,6 @@ Visualisation of typescript project dependencies.
 The idea of this project is to create a dependency graph of your project.
 
 
-
-
-
-
-# TODO
-
-- Experiment with how to display the data collected.
-    - Maybe with a stack?
-- Get rid of duplicate reference
-    - And tick isDefinition, and fill in end of definition using define.
-
-- Write some server tests.
-- Write more tsServer tests.
-
-
-
-
 ## Client
 
 ### Find dependencies
@@ -69,15 +52,14 @@ The idea of this project is to create a dependency graph of your project.
 
 # Think more about how much in memory is needed.
 
-Storage of the memory.
+~~Storage of the memory.~~
 
 ```
 Hash table [**filepath**] -> {  tokenData[] (ordered) ,
                                 Segment tree of the isDefinition scopes -> token data }
 ```
 
-
-Range tree can be used because it can be traversed inorder to generate the display.
+This is irrelevant now. We can lazily generate scopes using **navtree** on the file.
 
 
 ## Token data
@@ -97,8 +79,9 @@ references: []
 
 # Optimisation thoughts
 
-- When scanning the file for tokens, we wait for all the data before cleaning the data.
-- This could be sped up by simply doing both steps in 1 loop through the data.
+- ~~When scanning the file for tokens, we wait for all the data before cleaning the data.~~
+- ~~This could be sped up by simply doing both steps in 1 loop through the data.~~
+- Optimised to lazily look everything up.
 
 
 # Task list
