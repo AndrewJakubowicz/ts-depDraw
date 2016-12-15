@@ -99,3 +99,13 @@ references: []
 
 - When scanning the file for tokens, we wait for all the data before cleaning the data.
 - This could be sped up by simply doing both steps in 1 loop through the data.
+
+
+# Task list
+
+ - [x] Get text from file.
+ - [x] Get token information from file.
+ - [ ] Get dependencies for a token.
+ - [ ] Get dependents for a token.
+ - [ ] Create frontend repo.
+ - [ ] Use opn to open browser.
