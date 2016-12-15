@@ -562,19 +562,6 @@ function mergeRequestWithBody(req : string, body : RequestBody) : string {
     return JSON.stringify(newReq);
 }
 
-function initScannerState() : ts.Scanner {
-    // TODO: scanner matches tsconfig.
-    let scanner = ts.createScanner(ts.ScriptTarget.Latest, false);
-    scanner.setOnError((message, length) => {
-        winston.warn(`${JSON.stringify(message)}`);
-    });
-    // TODO: match with users tsconfig.json
-    scanner.setScriptTarget(ts.ScriptTarget.ES5);
-    // TODO: match variant with tsconfig.json
-    scanner.setLanguageVariant(ts.LanguageVariant.Standard);
-    return scanner;
-}
-
 /**
  * This is the very tiny token that is created for failed lookups.
  *
@@ -678,8 +665,28 @@ export function removeDuplicateReference(compressedReference : TokenIdentifierDa
 }
 
 /**
-* Worker which scans the file and returns all the text with tokens.
-*/
+ * Function for initialising the scanner.
+ */
+function initScannerState() : ts.Scanner {
+    // TODO: scanner matches tsconfig.
+    let scanner = ts.createScanner(ts.ScriptTarget.Latest, false);
+    scanner.setOnError((message, length) => {
+        winston.warn(`${JSON.stringify(message)}`);
+    });
+    // TODO: match with users tsconfig.json
+    scanner.setScriptTarget(ts.ScriptTarget.ES5);
+    // TODO: match variant with tsconfig.json
+    scanner.setLanguageVariant(ts.LanguageVariant.Standard);
+    return scanner;
+}
+
+
+/**
+ * scanFileForIdentifierTokens returns an array of all the tokens in the file.
+ * 
+ * This can be used to recreate the file in some sort of interface, with enough information
+ * to hook up commands to the identifier tokens.
+ */
 export function scanFileForIdentifierTokens (filePath : string) : Promise < any > {
     return new Promise((resolve, reject) => {
         /**
@@ -701,6 +708,7 @@ export function scanFileForIdentifierTokens (filePath : string) : Promise < any 
             return reject(new Error(`tsconfig root directory not set: ${err}`));
         }
 
+        // Grabbing to root path.
         let appDir = global.tsconfigRootDir;
         filePath = path.join(appDir, filePath);
         let tssFilePath = filePath;
@@ -708,8 +716,10 @@ export function scanFileForIdentifierTokens (filePath : string) : Promise < any 
             winston.log("debug", `File doesn't exist: ${filePath}`);
             return reject(new Error(`File doesn't exist: ${filePath}`));
         }
-        winston.log("debug", `function scanFile accessed ${filePath}`);
 
+        winston.log("debug", `Accessed ${filePath}.`);
+
+        // Read file and scan for tokens.
         fs.readFile(filePath, 'utf-8', (err, data) => {
             if (err) {
                 reject(new Error(`Failed to read file for tokens: ${err}`));
@@ -745,5 +755,5 @@ export function scanFileForIdentifierTokens (filePath : string) : Promise < any 
 
             resolve(tokenResults);
         });
-    })
+    });
 }
