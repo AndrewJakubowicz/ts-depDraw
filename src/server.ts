@@ -167,9 +167,16 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
 /**
  * getTokenDependencies returns the dependencies of a specified token.
  * 
+ * Finds definition of token, and then filters the tokens from the definition filePath
+ * to only include the tokens which are Indentifiers and within the start and end range.
  */
 server.get('/api/getTokenDependencies', (req: express.Request, res: express.Response) => {
     winston.log('info', `Query for getTokenDependencies:`, req.query);
+
+    let errFunc = (err) => {
+        winston.log('error', `Error occurred in getTokenDependencies`, err);
+        return res.status(500).send('Internal Server Error');
+    }
 
     if (sanitiseFileLineOffset(req, res) !== true){
         return
@@ -189,44 +196,43 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         });
     }).then((response: string) => {
         return jsonUtil.parseEscaped(response)
-    }, console.error)
+    }, errFunc)
     .then(resp => {
         definitionToken = resp;
         definitionFilePath = resp.body[0].file
         return tss.scanFileForIdentifierTokens(definitionFilePath);
     }).then(allFileTokens => {
-            let tokenDefinition = definitionToken
-            winston.log('trace', `Slicing dependencies using`, definitionToken, allFileTokens);
+        let tokenDefinition = definitionToken
+        winston.log('trace', `Slicing dependencies using`, definitionToken, allFileTokens);
 
-            return extractTokensFromFile(allFileTokens,
-                                            tokenDefinition.body[0].start,
-                                            tokenDefinition.body[0].end);
-            
-        }, err => {winston.log('error', `Error selectedDependencies`, err)})
-        .then(selectTokens => {
-            // This is where we filter by token type.
-            return selectTokens.filter(token => {
-                return token.type === 'Identifier';
-            });
-        }).then(selectedTokens => {
-            // Here we need to add metadata.
-            console.log(selectedTokens);
-            let quickInfoList = [];
-            (selectedTokens as any[]).forEach(token => {
-                quickInfoList.push(new Promise((resolve, reject) => {
-                    tssServer.quickinfo(definitionFilePath, token.start.line, token.start.character, (err, resp) => {
-                        if (err) {
-                            reject(err);
-                        }
-                        resolve(jsonUtil.parseEscaped(resp))
-                    });
-                }));
-            });
-            return Promise.all(quickInfoList);
-        }).then(args => {
-            return res.status(200).send(jsonUtil.stringifyEscape(args));
-        })
-        .catch(console.log)
+        return extractTokensFromFile(allFileTokens,
+                                        tokenDefinition.body[0].start,
+                                        tokenDefinition.body[0].end);
+        
+    }, err => {winston.log('error', `Error selectedDependencies`, err)})
+    .then(selectTokens => {
+        // This is where we filter by token type.
+        return selectTokens.filter(token => {
+            return token.type === 'Identifier';
+        });
+    }).then(selectedTokens => {
+        // Here we are adding metadata.
+        let quickInfoList = [];
+        (selectedTokens as any[]).forEach(token => {
+            quickInfoList.push(new Promise((resolve, reject) => {
+                tssServer.quickinfo(definitionFilePath, token.start.line, token.start.character, (err, resp) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    resolve(jsonUtil.parseEscaped(resp))
+                });
+            }));
+        });
+        return Promise.all(quickInfoList);
+    }).then(args => {
+        return res.status(200).send(jsonUtil.stringifyEscape(args));
+    })
+    .catch(errFunc)
 });
 
 

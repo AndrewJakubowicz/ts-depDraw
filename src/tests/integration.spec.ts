@@ -16,7 +16,7 @@ import * as jsonUtil from '../util/jsonUtil';
  * keeping them 'pure'.
  */
 describe('Server api:', function () {
-    this.timeout(4000);
+    this.timeout(6000);
     let serverProcess : child_process.ChildProcess;
 
     beforeEach(function (done) {
