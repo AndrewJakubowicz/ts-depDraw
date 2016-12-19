@@ -133,7 +133,7 @@ describe('Server api:', function () {
             });
     });
 
-it.only('Call /api/getTokenDependencies on server', function (done) {
+it('Call /api/getTokenDependencies on server', function (done) {
         http
             .get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex2.ts&line=9&offset=1`, function (res) {
                 res.on('data', (data) => {
