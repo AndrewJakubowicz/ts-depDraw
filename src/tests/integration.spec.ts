@@ -16,7 +16,7 @@ import * as jsonUtil from '../util/jsonUtil';
  * keeping them 'pure'.
  */
 describe('Server api:', function () {
-    this.timeout(4000);
+    this.timeout(10000);
     let serverProcess : child_process.ChildProcess;
 
     beforeEach(function (done) {
@@ -118,6 +118,24 @@ describe('Server api:', function () {
     it('Call /api/getTokenType on server', function (done) {
         http
             .get(`http://localhost:8080/api/getTokenType?filePath=examples/ex7_deepNesting.ts&line=7&offset=9`, function (res) {
+                res.on('data', (data) => {
+                    return Promise
+                        .resolve()
+                        .then(() => {
+                            expect(jsonUtil.parseEscaped(data.toString()))
+                                .to
+                                .deep
+                                .equal(jsonUtil.parseEscaped('{"seq":0,"type":"response","command":"quickinfo","request_seq":2,"success":true,"body":{"kind":"function","kindModifiers":"","start":{"line":7,"offset":9},"end":{"line":7,"offset":10},"displayString":"function%20D()%3A%20void","documentation":""}}'));
+                        })
+                        .then(done)
+                        .catch(done);
+                });
+            });
+    });
+
+it.only('Call /api/getTokenDependencies on server', function (done) {
+        http
+            .get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex2.ts&line=9&offset=1`, function (res) {
                 res.on('data', (data) => {
                     return Promise
                         .resolve()

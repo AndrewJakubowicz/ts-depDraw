@@ -18,8 +18,12 @@
  *  - returns token data. Can be used to recreate the display.
  *
  * 
- * /api/getTokenType
- *  - returns 
+ * /api/getTokenType (filePath, line, offset)
+ *  - returns data for the type of token requested.
+ * 
+ * 
+ * /api/getTokenDependencies (filePath, line, offset)
+ *  - returns the dependencies.
  */
 
 import * as http from 'http';
@@ -58,9 +62,7 @@ server.get('/api/init', (req : express.Request, res : express.Response) => {
     winston.log('trace', `Responding to /api/init`, global.rootFile);
 
     res.setHeader('Content-Type', 'application/json');
-    res
-        .status(200)
-        .send(jsonUtil.stringifyEscape(global.rootFile));
+    return res.status(200).send(jsonUtil.stringifyEscape(global.rootFile));
 });
 
 /**
@@ -75,17 +77,15 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
     if (req.query.hasOwnProperty('filePath')) {
         filePath = req.query["filePath"]
     } else {
-        res
-            .status(400)
-            .send('Malformed client info');
-        return
+        return res.status(400)
+                  .send('Malformed client info');
     }
 
     // Initiate tssServer open callback.
     tssServer.open(filePath, err => {
         if (err) {
             winston.log('error', `open method failed`, err);
-            res.status(500).send('Server failed to open file.');
+            return res.status(500).send('Server failed to open file.');
         }
     });
 
@@ -94,10 +94,8 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
         .readFile(filePath, 'utf8', function (err, data) {
             if (err) {
                 winston.log('error', `getFileText failed with ${err}`);
-                res
-                    .status(500)
-                    .send('Unable to get root file text!');
-                return
+                return res.status(500)
+                          .send('Unable to get root file text!');
             }
 
             let fileTextResponse = {
@@ -105,9 +103,8 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
                 text: data
             }
 
-            res
-                .status(200)
-                .send(jsonUtil.stringifyEscape(fileTextResponse));
+            return res.status(200)
+                      .send(jsonUtil.stringifyEscape(fileTextResponse));
         });
 
 });
@@ -124,21 +121,15 @@ server.get('/api/getTextIdentifierTokensLocations', (req : express.Request, res 
             .scanFileForIdentifierTokens(req.query["filePath"])
             .then(tokenList => {
                 res.setHeader('Content-Type', 'application/json');
-                res
-                    .status(200)
-                    .send(jsonUtil.stringifyEscape(tokenList));
+                return res.status(200).send(jsonUtil.stringifyEscape(tokenList));
             })
             .catch(err => {
                 winston.log('error', `getTextIdentifierTokensLocations failed with ${err}`);
-                res
-                    .status(500)
-                    .send('Unable to text IdentifierTokensLocations!');
+                return res.status(500).send('Unable to text IdentifierTokensLocations!');
             });
     } else {
         winston.log('error', `no filePath given in request`, req);
-        res
-            .status(400)
-            .send('Malformed client input.');
+        return res.status(400).send('Malformed client input.');
     }
 });
 
@@ -149,20 +140,14 @@ server.get('/api/getTextIdentifierTokensLocations', (req : express.Request, res 
  */
 server.get('/api/getTokenType', (req: express.Request, res: express.Response) => {
     winston.log('info', `Query for getTokenType:`, req.query);
-    if (!(req.query.hasOwnProperty('filePath') && req.query.hasOwnProperty('line') && req.query.hasOwnProperty('offset'))) {
-        winston.log('error', `need filePath && line && offset given in request`, req.query);
-
-        return res.status(400).send('Malformed client input.');
+    
+    if (sanitiseFileLineOffset(req, res) !== true){
+        return
     }
+
     let filePath = req.query['filePath'],
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
-
-    if (isNaN(line) || isNaN(offset)){
-        winston.log('error', `Line and offset must be numbers!`, line, offset);
-        return res.status(400).send('Malformed client input.');
-
-    }
     
     tssServer.open(filePath, err => {
         if (err) {
@@ -185,15 +170,88 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
  */
 server.get('/api/getTokenDependencies', (req: express.Request, res: express.Response) => {
     winston.log('info', `Query for getTokenDependencies:`, req.query);
+
+    if (sanitiseFileLineOffset(req, res) !== true){
+        return
+    }
+    let filePath = req.query['filePath'],
+        line = parseInt(req.query['line']),
+        offset = parseInt(req.query['offset']);
+
+
+    let definitionLocation = new Promise((resolve, reject) => {
+        tssServer.definition(filePath, line, offset, (err, response) => {
+            if (err) {
+                reject(err);
+            }
+            resolve(response);
+        });
+    }).then((response: string) => {
+        return jsonUtil.parseEscaped(response)
+    }, console.error)
+      .catch(console.error);
+    
+    let fileTokens= tss.scanFileForIdentifierTokens(filePath);
+    
+    let selectedDependencies = Promise.all([definitionLocation, fileTokens])
+        .then(args => {
+            let tokenDefinition = args[0],
+                allFileTokens = args[1]
+            winston.log('trace', `Slicing dependencies using`, args);
+
+            return extractTokensFromFile(allFileTokens,
+                                            tokenDefinition.body[0].start,
+                                            tokenDefinition.body[0].end);
+            
+        }, err => {winston.log('error', `Error selectedDependencies`, err)})
+        .then(selectTokens => {
+            return selectTokens.filter(token => {
+                return token.type === 'Identifier';
+            });
+        }).then(selectedTokens => {
+            console.log(selectedTokens);
+        })
+        .catch(console.log)
+
+});
+
+
+/**
+ * Helper function for making sure that 
+ */
+function sanitiseFileLineOffset(req: express.Request, res: express.Response){
     if (!(req.query.hasOwnProperty('filePath') && req.query.hasOwnProperty('line') && req.query.hasOwnProperty('offset'))) {
         winston.log('error', `need filePath && line && offset given in request`, req.query);
 
-        res.status(400)
-           .send('Malformed client input.');
+        return res.status(400).send('Malformed client input.');
     }
 
+    if (isNaN(parseInt(req.query['line'])) || isNaN(parseInt(req.query['offset']))){
+        winston.log('error', `Line and offset must be numbers!`);
+        return res.status(400).send('Malformed client input.');
+    }
+    return true;
+}
+
+/**
+ * Helper function that binary searches a file list.
+ */
+function extractTokensFromFile(fileTokenList, start, end){
+    winston.log('trace', `extractTokensFromFile called with`, arguments);
 
 
-});
+    // TODO: optimise with binary search.
+    return fileTokenList.filter(token => {
+        if (token.start.line === start.line) {
+            return token.start.character > start.offset
+        }
+        if (token.start.line === end.line) {
+            return token.start.character < end.offset
+        }
+        return (token.start.line >= start.line && token.start.line <= end.line)
+    });
+}
+
+
 
 export let SERVER = server;
