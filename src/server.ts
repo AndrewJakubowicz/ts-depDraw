@@ -17,6 +17,9 @@
  * /api/getTextIdentifierTokensLocations
  *  - returns token data. Can be used to recreate the display.
  *
+ * 
+ * /api/getTokenType
+ *  - returns 
  */
 
 import * as http from 'http';
@@ -78,14 +81,23 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
         return
     }
 
+    // Initiate tssServer open callback.
+    tssServer.open(filePath, err => {
+        if (err) {
+            winston.log('error', `open method failed`, err);
+            res.status(500).send('Server failed to open file.');
+        }
+    });
+
     // Grab file text
     fs
         .readFile(filePath, 'utf8', function (err, data) {
             if (err) {
-                winston.log('error', `Default getFileText failed with ${err}`);
+                winston.log('error', `getFileText failed with ${err}`);
                 res
                     .status(500)
                     .send('Unable to get root file text!');
+                return
             }
 
             let fileTextResponse = {
@@ -140,24 +152,29 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
     if (!(req.query.hasOwnProperty('filePath') && req.query.hasOwnProperty('line') && req.query.hasOwnProperty('offset'))) {
         winston.log('error', `need filePath && line && offset given in request`, req.query);
 
-        res.status(400).send('Malformed client input.');
+        return res.status(400).send('Malformed client input.');
     }
     let filePath = req.query['filePath'],
-        line = req.query['line'],
-        offset = req.query['offset']
+        line = parseInt(req.query['line']),
+        offset = parseInt(req.query['offset']);
+
+    if (isNaN(line) || isNaN(offset)){
+        winston.log('error', `Line and offset must be numbers!`, line, offset);
+        return res.status(400).send('Malformed client input.');
+
+    }
+    
     tssServer.open(filePath, err => {
         if (err) {
             winston.log('error', `Couldn't open file`, err);
-            res.status(500).send('Internal error');
+            return res.status(500).send('Internal error');
         }
     });
 
     tssServer.quickinfo(filePath, line, offset, (err, response, request) => {
         winston.log('trace', `Response of type`, response);
         res.setHeader('Content-Type', 'application/json');
-                res
-                    .status(200)
-                    .send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+        return res.status(200).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
     });
 });
 

@@ -791,3 +791,25 @@ describe('NavTree method examples and quickinfo', function () {
     });
 
 });
+
+describe('Solo Quickinfo', function () {
+    this.timeout(10000);
+    var s = new tss.Tsserver();
+
+    s.open("examples/ex7_deepNesting.ts", function () { });
+
+    // Remember to clean up the server once you're finished.
+    after(function () {
+        s.kill();
+    });
+
+
+    it('solo quickinfo', function (done) {
+        s
+            .quickinfo('examples/ex7_deepNesting.ts',7, 9, function (err, res, req) {
+                expect(jsonUtil.parseEscaped(res)).to.deep.equal(jsonUtil.parseEscaped(jsonUtil.stringifyEscape({"seq":0,"type":"response","command":"quickinfo","request_seq":1,"success":true,"body":{"kind":"function","kindModifiers":"","start":{"line":7,"offset":9},"end":{"line":7,"offset":10},"displayString":"function D(): void","documentation":""}})));
+                done();
+            });
+    });
+
+});
