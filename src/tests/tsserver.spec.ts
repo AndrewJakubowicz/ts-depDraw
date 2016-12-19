@@ -756,7 +756,7 @@ describe('Getting token positions and types', function () {
 });
 
 
-describe('NavTree method examples.', function () {
+describe('NavTree method examples and quickinfo', function () {
     this.timeout(10000);
     var s = new tss.Tsserver();
 
@@ -777,6 +777,15 @@ describe('NavTree method examples.', function () {
         s
             .navtree('examples/ex7_deepNesting.ts', function (err, res, req) {
                 expect(jsonUtil.stringifyEscape(JSON.parse(res))).to.deep.equal(jsonUtil.stringifyEscape({"seq":0,"type":"response","command":"navtree","request_seq":1,"success":true,"body":{"text":"<global>","kind":"script","kindModifiers":"","spans":[{"start":{"line":1,"offset":1},"end":{"line":26,"offset":2}}],"childItems":[{"text":"A","kind":"function","kindModifiers":"","spans":[{"start":{"line":3,"offset":1},"end":{"line":16,"offset":2}}],"childItems":[{"text":"B","kind":"function","kindModifiers":"","spans":[{"start":{"line":5,"offset":5},"end":{"line":15,"offset":6}}],"childItems":[{"text":"C","kind":"function","kindModifiers":"","spans":[{"start":{"line":10,"offset":9},"end":{"line":14,"offset":10}}]}]}]},{"text":"D","kind":"function","kindModifiers":"","spans":[{"start":{"line":20,"offset":1},"end":{"line":26,"offset":2}}],"childItems":[{"text":"E","kind":"function","kindModifiers":"","spans":[{"start":{"line":22,"offset":5},"end":{"line":24,"offset":6}}]}]}]}}));
+                done();
+            });
+    });
+
+
+    it('QuickInfo Example 1', function (done) {
+        s
+            .quickinfo('examples/ex7_deepNesting.ts',7, 9, function (err, res, req) {
+                expect(jsonUtil.parseEscaped(res)).to.deep.equal(jsonUtil.parseEscaped(jsonUtil.stringifyEscape({"seq":0,"type":"response","command":"quickinfo","request_seq":2,"success":true,"body":{"kind":"function","kindModifiers":"","start":{"line":7,"offset":9},"end":{"line":7,"offset":10},"displayString":"function D(): void","documentation":""}})));
                 done();
             });
     });
