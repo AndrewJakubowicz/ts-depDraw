@@ -178,7 +178,8 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
 
-
+    let definitionToken;
+    let definitionFilePath: string;
     let definitionLocation = new Promise((resolve, reject) => {
         tssServer.definition(filePath, line, offset, (err, response) => {
             if (err) {
@@ -189,15 +190,13 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
     }).then((response: string) => {
         return jsonUtil.parseEscaped(response)
     }, console.error)
-      .catch(console.error);
-    
-    let fileTokens= tss.scanFileForIdentifierTokens(filePath);
-    
-    let selectedDependencies = Promise.all([definitionLocation, fileTokens])
-        .then(args => {
-            let tokenDefinition = args[0],
-                allFileTokens = args[1]
-            winston.log('trace', `Slicing dependencies using`, args);
+    .then(resp => {
+        definitionToken = resp;
+        definitionFilePath = resp.body[0].file
+        return tss.scanFileForIdentifierTokens(definitionFilePath);
+    }).then(allFileTokens => {
+            let tokenDefinition = definitionToken
+            winston.log('trace', `Slicing dependencies using`, definitionToken, allFileTokens);
 
             return extractTokensFromFile(allFileTokens,
                                             tokenDefinition.body[0].start,
@@ -205,14 +204,29 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
             
         }, err => {winston.log('error', `Error selectedDependencies`, err)})
         .then(selectTokens => {
+            // This is where we filter by token type.
             return selectTokens.filter(token => {
                 return token.type === 'Identifier';
             });
         }).then(selectedTokens => {
+            // Here we need to add metadata.
             console.log(selectedTokens);
+            let quickInfoList = [];
+            (selectedTokens as any[]).forEach(token => {
+                quickInfoList.push(new Promise((resolve, reject) => {
+                    tssServer.quickinfo(definitionFilePath, token.start.line, token.start.character, (err, resp) => {
+                        if (err) {
+                            reject(err);
+                        }
+                        resolve(jsonUtil.parseEscaped(resp))
+                    });
+                }));
+            });
+            return Promise.all(quickInfoList);
+        }).then(args => {
+            return res.status(200).send(jsonUtil.stringifyEscape(args));
         })
         .catch(console.log)
-
 });
 
 

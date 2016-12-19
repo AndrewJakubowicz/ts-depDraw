@@ -16,7 +16,7 @@ import * as jsonUtil from '../util/jsonUtil';
  * keeping them 'pure'.
  */
 describe('Server api:', function () {
-    this.timeout(10000);
+    this.timeout(4000);
     let serverProcess : child_process.ChildProcess;
 
     beforeEach(function (done) {
@@ -140,10 +140,9 @@ it.only('Call /api/getTokenDependencies on server', function (done) {
                     return Promise
                         .resolve()
                         .then(() => {
-                            expect(jsonUtil.parseEscaped(data.toString()))
+                            expect(data.toString())
                                 .to
-                                .deep
-                                .equal(jsonUtil.parseEscaped('{"seq":0,"type":"response","command":"quickinfo","request_seq":2,"success":true,"body":{"kind":"function","kindModifiers":"","start":{"line":7,"offset":9},"end":{"line":7,"offset":10},"displayString":"function%20D()%3A%20void","documentation":""}}'));
+                                .equal(`[{"seq":0,"type":"response","command":"quickinfo","request_seq":2,"success":true,"body":{"kind":"function","kindModifiers":"","start":{"line":2,"offset":10},"end":{"line":2,"offset":16},"displayString":"function%20findMe()%3A%20void","documentation":""}}]`);
                         })
                         .then(done)
                         .catch(done);
