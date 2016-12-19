@@ -10,13 +10,18 @@ import * as assert from "assert";
 import * as ts from "TypeScript";
 
 import * as child_process from "child_process";
+
 import * as winston from "./appLogger";
+import * as jsonUtil from './util/jsonUtil';
 
 
 /**
  * CACHE for the file tokens.
  */
-let FILE_TOKENS_ARRAY: Map<string, any> = new Map();
+let FILE_TOKENS_ARRAY: Map<string,any> = new Map();
+
+/** What files has tsserver opened */
+let OPENED_FILES: Map<string,boolean> = new Map();
 
 /**
  * methods fileScanner accepts
@@ -95,24 +100,26 @@ export class Tsserver {
                     });
 
                 // Grab first callback and data.
-                let [callback,
-                        requestText] = this
-                        .operations
-                        .shift(),
-                    chunk = allData.shift();
+                let callback,requestText,chunk;
+
+                // Added middleware to catch open call.
+                // TODO: remove this.
+                // winston.log('error', `What is this`, requestText, typeof requestText);
+                // winston.log('error', `What is this`, jsonUtil.parseEscaped(requestText));
+                // let command = jsonUtil.parseEscaped(requestText)
 
                 while (allData.length > 0) {
                     winston.log("debug", `Tsserver response: Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`);
                     if (allData.length !== this.operations.length) {
                         winston.debug(`Tsserver response: Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`, allData, this.operations);
                     }
-                    callback(null, chunk, requestText);
+                    
                     [callback, requestText] = this
                         .operations
                         .shift();
                     chunk = allData.shift();
+                    callback(null, chunk, requestText);
                 }
-                callback(null, chunk, requestText);
             });
 
         /**
@@ -284,10 +291,19 @@ export class Tsserver {
     }
 
     kill() {
-        winston.log("data", `TSSERVER SENDING QUIT REQUEST`);
+        winston.log("trace", `TSSERVER SENDING QUIT REQUEST`);
         this
             .proc
             .kill();
+    }
+
+    /**
+     * getTokenDependencies gets dependencies based on type.
+     * 
+     * Modules get module level dependencies. Functions get inner scope and module dependency.
+     */
+    getTokenDependencies(filePath: string, line: number, ) {
+
     }
 
     /**
