@@ -38,7 +38,7 @@ setTimeout(() => {
         if (err) {
             throw err;
         }
-        console.log('OPENED FILE');
+        winston.log('trace', `Opened file:`, global.rootFile);
     })
 }, 0)
 
@@ -106,7 +106,7 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
  * @return token Array<{ text: string, type: string, start: {line: number, offset: number} } }>
  */
 server.get('/api/getTextIdentifierTokensLocations', (req : express.Request, res : express.Response) => {
-    winston.log('info', `Query for getTextIdentifierTokensLocations: ${req.query["filePath"]}`);
+    winston.log('info', `Query for getTextIdentifierTokensLocations:`, req.query);
     if (req.query.hasOwnProperty('filePath')) {
         tss
             .scanFileForIdentifierTokens(req.query["filePath"])
@@ -128,6 +128,16 @@ server.get('/api/getTextIdentifierTokensLocations', (req : express.Request, res 
             .status(400)
             .send('Malformed client input.');
     }
+});
+
+
+/**
+ * getTokenDependencies returns the dependencies of a specified token.
+ * 
+ */
+server.get('/api/getTokenDependencies', (req: express.Request, res: express.Response) => {
+    winston.log('info', `Query for getTokenDependencies:`, req.query);
+    
 });
 
 export let SERVER = server;

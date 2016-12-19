@@ -189,6 +189,32 @@ export class Tsserver {
     }
 
     /**
+     * typeDefinition implements typeDefinition in tsserver protocol.
+     */
+    typeDefinition(filePath : string, line : number, column : number, callback : (err : Error, response : string, request : string) => void) {
+        let commandObj : LookupCommand = {
+            seq: this.seq,
+            type: "request",
+            command: "typeDefinition",
+            arguments: {
+                file: path.join(filePath),
+                line: line,
+                offset: column
+            }
+        }
+        let command = JSON.stringify(commandObj);
+        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
+        this
+            .proc
+            .stdin
+            .write(command + '\n');
+        this
+            .operations
+            .push([callback, command]);
+        this.seq++;
+    }
+
+    /**
      * Allows goto definition using tsserver.
      * This will store a callback on the FIFO queue.
      * If you don't open the file before trying to find definitions in it, this will fail.

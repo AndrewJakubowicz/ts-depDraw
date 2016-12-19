@@ -96,10 +96,29 @@ describe('Basic uses of a tsserver:', function () {
         });
     });
 
-    it('Navtree function', function (done) {
+    // This example shows how to get the object out and stringify it.
+    it('Navtree method', function (done) {
+        s.open("examples/ex4.ts", function (err, d) {
+            if (err) {
+                done(err);
+            }
+        });
         s
             .navtree('examples/ex4.ts', function (err, res, req) {
-                console.log(res, req);
+                expect(jsonUtil.stringifyEscape(JSON.parse(res))).to.deep.equal(jsonUtil.stringifyEscape({"seq":0,"type":"response","command":"navtree","request_seq":6,"success":true,"body":{"text":"\"ex4\"","kind":"module","kindModifiers":"","spans":[{"start":{"line":1,"offset":1},"end":{"line":11,"offset":2}}],"childItems":[{"text":"betterAdder","kind":"function","kindModifiers":"export","spans":[{"start":{"line":4,"offset":1},"end":{"line":6,"offset":2}}]},{"text":"betterConsoleLog","kind":"function","kindModifiers":"export","spans":[{"start":{"line":9,"offset":1},"end":{"line":11,"offset":2}}]},{"text":"example","kind":"alias","kindModifiers":"","spans":[{"start":{"line":1,"offset":8},"end":{"line":1,"offset":20}}]}]}}));
+                done();
+            });
+    });
+
+    it('typeDefinition method', function (done) {
+        s.open("examples/ex1.ts", function (err, d) {
+            if (err) {
+                done(err);
+            }
+        });
+        s
+            .typeDefinition('examples/ex1.ts', 1, 14, function (err, res, req) {
+                expect(res.toString()).to.equal(`{"seq":0,"type":"response","command":"typeDefinition","request_seq":8,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2111,"offset":1},"end":{"line":2610,"offset":2}}]}`);
                 done();
             });
     });
@@ -114,7 +133,7 @@ describe('Basic uses of a tsserver:', function () {
                         "seq": 0,
                         "type": "response",
                         "command": "definition",
-                        "request_seq": 6,
+                        "request_seq": 9,
                         "success": true,
                         "body": [
                             {
