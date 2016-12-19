@@ -107,15 +107,15 @@ describe('Basic uses of a tsserver:', function () {
             });
     });
 
-    it('typeDefinition method', function (done) {
+    it('quickinfo method', function (done) {
         s.open("examples/ex1.ts", function (err, d) {
             if (err) {
                 done(err);
             }
         });
         s
-            .typeDefinition('examples/ex1.ts', 1, 14, function (err, res, req) {
-                expect(res.toString()).to.equal(`{"seq":0,"type":"response","command":"typeDefinition","request_seq":8,"success":true,"body":[{"file":"/Users/Spyr1014/Projects/TypeScript/ts-depDraw/node_modules/@types/node/index.d.ts","start":{"line":2111,"offset":1},"end":{"line":2610,"offset":2}}]}`);
+            .quickinfo('examples/ex1.ts', 1, 14, function (err, res, req) {
+                expect(res.toString()).to.equal(`{"seq":0,"type":"response","command":"quickinfo","request_seq":8,"success":true,"body":{"kind":"alias","kindModifiers":"","start":{"line":1,"offset":13},"end":{"line":1,"offset":15},"displayString":"import fs","documentation":""}}`);
                 done();
             });
     });
@@ -753,4 +753,32 @@ describe('Getting token positions and types', function () {
             .then(done)
             .catch(done);
     });
+});
+
+
+describe('NavTree method examples.', function () {
+    this.timeout(10000);
+    var s = new tss.Tsserver();
+
+    // Remember to clean up the server once you're finished.
+    after(function () {
+        s.kill();
+    });
+
+
+    // Notice that the outer most scope is the global scope.
+    // Then you can traverse the children to close in on the scope.
+    it('Navtree method with deep nesting', function (done) {
+        s.open("examples/ex7_deepNesting.ts", function (err, d) {
+            if (err) {
+                done(err);
+            }
+        });
+        s
+            .navtree('examples/ex7_deepNesting.ts', function (err, res, req) {
+                expect(jsonUtil.stringifyEscape(JSON.parse(res))).to.deep.equal(jsonUtil.stringifyEscape({"seq":0,"type":"response","command":"navtree","request_seq":1,"success":true,"body":{"text":"<global>","kind":"script","kindModifiers":"","spans":[{"start":{"line":1,"offset":1},"end":{"line":26,"offset":2}}],"childItems":[{"text":"A","kind":"function","kindModifiers":"","spans":[{"start":{"line":3,"offset":1},"end":{"line":16,"offset":2}}],"childItems":[{"text":"B","kind":"function","kindModifiers":"","spans":[{"start":{"line":5,"offset":5},"end":{"line":15,"offset":6}}],"childItems":[{"text":"C","kind":"function","kindModifiers":"","spans":[{"start":{"line":10,"offset":9},"end":{"line":14,"offset":10}}]}]}]},{"text":"D","kind":"function","kindModifiers":"","spans":[{"start":{"line":20,"offset":1},"end":{"line":26,"offset":2}}],"childItems":[{"text":"E","kind":"function","kindModifiers":"","spans":[{"start":{"line":22,"offset":5},"end":{"line":24,"offset":6}}]}]}]}}));
+                done();
+            });
+    });
+
 });

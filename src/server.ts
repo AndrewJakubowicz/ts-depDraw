@@ -130,6 +130,37 @@ server.get('/api/getTextIdentifierTokensLocations', (req : express.Request, res 
     }
 });
 
+/**
+ * getTokenType returns the type of a specific token.
+ * 
+ * Requires filePath {string}, line {number}, offset {number}.
+ */
+server.get('/api/getTokenType', (req: express.Request, res: express.Response) => {
+    winston.log('info', `Query for getTokenType:`, req.query);
+    if (!(req.query.hasOwnProperty('filePath') && req.query.hasOwnProperty('line') && req.query.hasOwnProperty('offset'))) {
+        winston.log('error', `need filePath && line && offset given in request`, req.query);
+
+        res.status(400).send('Malformed client input.');
+    }
+    let filePath = req.query['filePath'],
+        line = req.query['line'],
+        offset = req.query['offset']
+    tssServer.open(filePath, err => {
+        if (err) {
+            winston.log('error', `Couldn't open file`, err);
+            res.status(500).send('Internal error');
+        }
+    });
+
+    tssServer.quickinfo(filePath, line, offset, (err, response, request) => {
+        winston.log('trace', `Response of type`, response);
+        res.setHeader('Content-Type', 'application/json');
+                res
+                    .status(200)
+                    .send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+    });
+});
+
 
 /**
  * getTokenDependencies returns the dependencies of a specified token.
@@ -137,7 +168,15 @@ server.get('/api/getTextIdentifierTokensLocations', (req : express.Request, res 
  */
 server.get('/api/getTokenDependencies', (req: express.Request, res: express.Response) => {
     winston.log('info', `Query for getTokenDependencies:`, req.query);
-    
+    if (!(req.query.hasOwnProperty('filePath') && req.query.hasOwnProperty('line') && req.query.hasOwnProperty('offset'))) {
+        winston.log('error', `need filePath && line && offset given in request`, req.query);
+
+        res.status(400)
+           .send('Malformed client input.');
+    }
+
+
+
 });
 
 export let SERVER = server;

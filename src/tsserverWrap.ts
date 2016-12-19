@@ -102,11 +102,6 @@ export class Tsserver {
                 // Grab first callback and data.
                 let callback,requestText,chunk;
 
-                // Added middleware to catch open call.
-                // TODO: remove this.
-                // winston.log('error', `What is this`, requestText, typeof requestText);
-                // winston.log('error', `What is this`, jsonUtil.parseEscaped(requestText));
-                // let command = jsonUtil.parseEscaped(requestText)
 
                 while (allData.length > 0) {
                     winston.log("debug", `Tsserver response: Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`);
@@ -118,6 +113,19 @@ export class Tsserver {
                         .operations
                         .shift();
                     chunk = allData.shift();
+
+                    winston.log('trace', `Chunk response and request`, chunk, requestText);
+
+                    // Added middleware to catch open call.
+                    // TODO: work on this.
+                    // winston.log('error', `What is this`, requestText, typeof requestText);
+                    // winston.log('error', `What is this`, jsonUtil.parseEscaped(requestText));
+                    // let command = jsonUtil.parseEscaped(requestText)
+                    // if (command.success && command.command === 'open' && !OPENED_FILES.has(command.arguments.file)){
+                    //     winston.log('warn', `Successful open of file:`, command.arguments.file);
+                    //     OPENED_FILES.set(command.arguments.file, true);
+                    // }
+
                     callback(null, chunk, requestText);
                 }
             });
@@ -196,13 +204,13 @@ export class Tsserver {
     }
 
     /**
-     * typeDefinition implements typeDefinition in tsserver protocol.
+     * quickinfo implements quickinfo in tsserver protocol.
      */
-    typeDefinition(filePath : string, line : number, column : number, callback : (err : Error, response : string, request : string) => void) {
+    quickinfo(filePath : string, line : number, column : number, callback : (err : Error, response : string, request : string) => void) {
         let commandObj : LookupCommand = {
             seq: this.seq,
             type: "request",
-            command: "typeDefinition",
+            command: "quickinfo",
             arguments: {
                 file: path.join(filePath),
                 line: line,
@@ -302,7 +310,7 @@ export class Tsserver {
      * 
      * Modules get module level dependencies. Functions get inner scope and module dependency.
      */
-    getTokenDependencies(filePath: string, line: number, ) {
+    getTokenDependencies(filePath: string, line: number, offset: number) {
 
     }
 

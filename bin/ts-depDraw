@@ -67,6 +67,7 @@ ts-depDraw must be initialized from a directory containing a tsconfig.
     global.rootFile = filePath;
 
     winston.log('trace', 'User input correct, starting program.');
+    winston.log('trace', `Starting program with the following global variables:`, global.tsconfigRootDir, global.rootFile);
     global.startServer = true;
     require('../index');
 })();
