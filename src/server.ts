@@ -198,9 +198,13 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         return jsonUtil.parseEscaped(response)
     }, errFunc)
     .then(resp => {
+        if (!resp.success){
+            throw new Error(`Cannot find definition: '${resp}'`);
+        }
         definitionToken = resp;
         definitionFilePath = resp.body[0].file
-        return tss.scanFileForIdentifierTokens(definitionFilePath);
+
+        return tss.scanFileForIdentifierTokens(path.relative(global.tsconfigRootDir, definitionFilePath));
     }).then(allFileTokens => {
         let tokenDefinition = definitionToken
         winston.log('trace', `Slicing dependencies using`, definitionToken, allFileTokens);
@@ -209,7 +213,10 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
                                         tokenDefinition.body[0].start,
                                         tokenDefinition.body[0].end);
         
-    }, err => {winston.log('error', `Error selectedDependencies`, err)})
+    }, err => {
+        winston.log('error', `Error selectedDependencies`, err);
+        throw err;
+    })
     .then(selectTokens => {
         // This is where we filter by token type.
         return selectTokens.filter(token => {
@@ -230,6 +237,7 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         });
         return Promise.all(quickInfoList);
     }).then(args => {
+        res.setHeader('Content-Type', 'application/json');
         return res.status(200).send(jsonUtil.stringifyEscape(args));
     })
     .catch(errFunc)
