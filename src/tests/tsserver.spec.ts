@@ -10,9 +10,6 @@ import * as jsonUtil from "../util/jsonUtil";
 var fs = require('fs');
 import * as path from 'path';
 
-// I am monkey patching this for tests. This will prevent the use of
-// mocha's location and instead mock project directory.
-require.main.filename = `/Users/Spyr1014/Projects/TypeScript/ts-depDraw/examples/`;
 
 /**
  * TODO: Make it so that anyone can test.
