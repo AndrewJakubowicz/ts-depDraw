@@ -39,6 +39,9 @@ import * as jsonUtil from './util/jsonUtil';
 let server = express();
 let tssServer = new tss.Tsserver();
 
+// Check globals
+global.tsconfigRootDir = global.tsconfigRootDir || (() => {throw new Error('tsconfigRootDir not set')})();
+
 // Loads the project into tsserver.
 setTimeout(() => {
     tssServer.open(global.rootFile, (err, res) => {
@@ -185,6 +188,13 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
 
+    tssServer.open(filePath, err => {
+        if (err) {
+            winston.log('error', `Couldn't open file`, err);
+            return res.status(500).send('Internal error');
+        }
+    });
+
     let definitionToken;
     let definitionFilePath: string;
     let definitionLocation = new Promise((resolve, reject) => {
@@ -243,6 +253,95 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
     .catch(errFunc)
 });
 
+/**
+ * getTokenDependents returns the dependents of a specified token.
+ * 
+ */
+server.get('/api/getTokenDependents', (req: express.Request, res: express.Response) => {
+    winston.log('info', `Query for getTokenDependents:`, req.query);
+
+    let errFunc = (err) => {
+        winston.log('trace', `Error occurred in getTokenDependents`, err);
+        return res.status(500).send('Internal Server Error');
+    }
+
+    if (sanitiseFileLineOffset(req, res) !== true){
+        return
+    }
+    let filePath = req.query['filePath'],
+        line = parseInt(req.query['line']),
+        offset = parseInt(req.query['offset']);
+    
+    tssServer.open(filePath, err => {
+        if (err) {
+            winston.log('error', `Couldn't open file`, err);
+            return res.status(500).send('Internal error');
+        }
+    });
+    
+    let findReferences = new Promise((resolve, reject) => {
+        tssServer.references(filePath, line, offset, (err, res) => {
+            winston.log('trace', `Response: `, res);
+            if (err) reject(err);
+            resolve(res);
+        });
+    })
+    .then(stringResponse => {
+        return jsonUtil.parseEscaped((stringResponse as string));
+    })
+    .then(referenceObject => {
+        winston.log('trace', `referenceObject: `, referenceObject);
+        let references = referenceObject.body.refs;
+        return (references as any[]).filter( refToken => !refToken.isDefinition );
+    })
+    .then(filteredList => {
+        // Here we need to collect a list of unique file paths.
+        winston.log('trace', `filtered referenceObject: `, filteredList);
+        let filePaths: Set<string> = new Set(); // Sets are iterated over in insertion order.
+        let relativePath: string;
+
+        (filteredList as any[]).forEach(token => {
+            relativePath = path.relative(global.tsconfigRootDir, token.file);
+            filePaths.has(relativePath) || filePaths.add(relativePath);
+        });
+
+        let navtreePromises = [];
+        filePaths.forEach(relativeFilePath => {
+            navtreePromises.push(new Promise((resolve, reject) => {
+                tssServer.open(relativeFilePath, err => {
+                    if (err){
+                        winston.log('error', `opening file failed`, err);
+                        return reject(err)
+                    }
+                });
+                tssServer.navtree(relativeFilePath, (err, res) => {
+                    if (err) {
+                        winston.log('error', `navtree method failed`, err);
+                        return reject(err);
+                    }
+                    return resolve(jsonUtil.parseEscaped(res));
+                });
+            }));
+        });
+        return Promise.all([...navtreePromises, filteredList]);
+    }).then(navTreeResponse => {
+        winston.log('trace', `Response to navtree:`, navTreeResponse);
+        let references = (navTreeResponse as any[]).slice(-1)[0];
+        let navTrees = navTreeResponse.slice(0, -1);
+
+        let scopesAffectedByReference = [];
+        winston.log('trace', `reflength and navTrees length`, references.length, navTrees.length);
+        references.forEach((tokenRef, i) => {
+            winston.log('trace', `Dispatching traverseNavTreeToken on `, navTrees[i].body, `and token reference`, tokenRef);
+            scopesAffectedByReference.push(...traverseNavTreeToken(navTrees[i].body, tokenRef))
+        });
+        return scopesAffectedByReference
+    }).then(scopesAffected => {
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).send(jsonUtil.stringifyEscape(scopesAffected));
+    })
+    .catch(errFunc);
+});
 
 /**
  * Helper function for making sure that 
@@ -278,6 +377,39 @@ function extractTokensFromFile(fileTokenList, start, end){
         }
         return (token.start.line >= start.line && token.start.line <= end.line)
     });
+}
+
+/**
+ * Helper function for traversing the navTree
+ */
+function traverseNavTreeToken(navTreeToken, refToken, results = []): any[]{
+    if (!tokenInRange(navTreeToken.spans[0].start,navTreeToken.spans[0].end, refToken.start)){
+        return []
+    }
+    let leafToken = {text: navTreeToken.text,
+                    kind: navTreeToken.kind,
+                    kindModifiers: navTreeToken.kindModifiers,
+                    spans: navTreeToken.spans}
+    winston.log('trace', `Created childItemScope: `, leafToken, results);
+    if (!navTreeToken.childItems){
+        return [leafToken];
+    } else {
+        results.push(leafToken);
+    }
+    navTreeToken.childItems.forEach(token => {
+        results.push(...traverseNavTreeToken(token, refToken, results))
+    });
+    winston.log('trace', `Results array: `, results);
+    return results
+}
+
+/**
+ * tokenInRange returns boolean representing if token is within scope.
+ * TODO: refine this filter.
+ */
+function tokenInRange(start, end, tokenStart){
+    winston.log('trace', `tokenInRange`, start.line <= tokenStart && end.line >= tokenStart)
+    return start.line <= tokenStart.line && end.line >= tokenStart.line
 }
 
 

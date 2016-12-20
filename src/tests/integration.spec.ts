@@ -142,8 +142,25 @@ it('Call /api/getTokenDependencies on server', function (done) {
                         .then(() => {
                             expect(data.toString())
                                 .to
-                                .equal(`[{"seq":0,"type":"response","command":"quickinfo","request_seq":2,"success":true,"body":{"kind":"function","kindModifiers":"","start":{"line":2,"offset":10},"end":{"line":2,"offset":16},"displayString":"function%20findMe()%3A%20void","documentation":""}}]`);
+                                .equal(`[{"seq":0,"type":"response","command":"quickinfo","request_seq":3,"success":true,"body":{"kind":"function","kindModifiers":"","start":{"line":2,"offset":10},"end":{"line":2,"offset":16},"displayString":"function%20findMe()%3A%20void","documentation":""}}]`);
                         })
+                        .then(done)
+                        .catch(done);
+                });
+            });
+    });
+
+    it('Call /api/getTokenDependents on server', function (done) {
+        http
+            .get(`http://localhost:8080/api/getTokenDependents?filePath=examples/ex3.ts&line=7&offset=22`, function (res) {
+                res.on('data', (data) => {
+                    return Promise
+                        .resolve()
+                        .then(() => {
+                            expect(data.toString())
+                                .to
+                                .equal(`[{"text":"%22ex4%22","kind":"module","kindModifiers":"","spans":[{"start":{"line":1,"offset":1},"end":{"line":11,"offset":2}}]},{"text":"betterAdder","kind":"function","kindModifiers":"export","spans":[{"start":{"line":4,"offset":1},"end":{"line":6,"offset":2}}]},{"text":"%22ex3%22","kind":"module","kindModifiers":"","spans":[{"start":{"line":1,"offset":1},"end":{"line":10,"offset":2}}]}]`);
+                    })
                         .then(done)
                         .catch(done);
                 });
