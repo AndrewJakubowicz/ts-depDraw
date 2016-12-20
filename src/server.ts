@@ -24,6 +24,9 @@
  * 
  * /api/getTokenDependencies (filePath, line, offset)
  *  - returns the dependencies.
+ * 
+ * /api/getTokenDependents (filePath, line, offset)
+ *  - returns the dependents.
  */
 
 import * as http from 'http';
