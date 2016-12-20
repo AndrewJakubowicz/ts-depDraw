@@ -261,7 +261,7 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
     winston.log('info', `Query for getTokenDependents:`, req.query);
 
     let errFunc = (err) => {
-        winston.log('trace', `Error occurred in getTokenDependents`, err);
+        winston.log('error', `Error occurred in getTokenDependents`, err);
         return res.status(500).send('Internal Server Error');
     }
 
@@ -323,6 +323,7 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
                 });
             }));
         });
+        // This promise is all the unique navtrees.
         return Promise.all([...navtreePromises, filteredList]);
     }).then(navTreeResponse => {
         winston.log('trace', `Response to navtree:`, navTreeResponse);
