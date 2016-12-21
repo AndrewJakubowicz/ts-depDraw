@@ -53,13 +53,21 @@ setTimeout(() => {
         }
         winston.log('trace', `Opened file:`, global.rootFile);
     })
-}, 0)
+}, 1);
 
 // This sets up a virtual path from '/' to the static directory. Adapted from
 // https://expressjs.com/en/starter/static-files.html If this middleware fails,
 // it will fall through to the next handler. We don't know where our app will be
 // located. Hence the path.join
 server.use('/', express.static(path.join(__dirname, '..', 'static')));
+
+// This should allow CORS on the server.
+// Thank you: http://enable-cors.org/server_expressjs.html
+server.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 
 /**
  * This can be called to get the first file that the user initiated the server on.
@@ -122,6 +130,7 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
  */
 server.get('/api/getTextIdentifierTokensLocations', (req : express.Request, res : express.Response) => {
     winston.log('info', `Query for getTextIdentifierTokensLocations:`, req.query);
+
     if (req.query.hasOwnProperty('filePath')) {
         tss
             .scanFileForIdentifierTokens(req.query["filePath"])
