@@ -240,7 +240,7 @@ describe('Server Cache:', function () {
 });
 
 
-describe.only('Stablity tests', function() {
+describe('Stablity tests', function() {
     this.timeout(6000);
     let serverProcess : child_process.ChildProcess;
 
@@ -305,7 +305,7 @@ describe.only('Stablity tests', function() {
         }); 
     });
 
-    it.only('get type for a return statement failure.', function(done){
+    it('get type for a return statement failure.', function(done){
         http.get(`http://localhost:8080/api/getTokenType?filePath=examples/ex3.ts&line=4&offset=5`, function (res) {
             return Promise.resolve().then(() => {
                 expect(res.statusCode).to.equal(204);
