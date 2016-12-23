@@ -42,7 +42,7 @@ describe('Server api:', function () {
     afterEach(function (done) {
         serverProcess.kill();
         done();
-    })
+    });
 
     it('Call init on server with escaping', function (done) {
         http
@@ -237,4 +237,90 @@ describe('Server Cache:', function () {
             });
     });
 
+});
+
+
+describe.only('Stablity tests', function() {
+    this.timeout(6000);
+    let serverProcess : child_process.ChildProcess;
+
+    beforeEach(function (done) {
+        serverProcess = child_process.spawn('npm', ['start', 'examples/ex3.ts']);
+
+        serverProcess
+            .stdout
+            .on('data', function (data) {
+                winston.log('trace', `Integration Test stdout: ${data}.`);
+                // Calls the done callback as soon as server has started. (Reads the freaking
+                // stdout of the process).
+                if (data.toString().indexOf('Server started and listening') !== -1) {
+                    done()
+                }
+            });
+
+        serverProcess.on('close', function () {
+            winston.log('trace', `Closed server process`);
+        });
+
+    });
+
+    afterEach(function (done) {
+        serverProcess.kill();
+        done();
+    });
+
+    it('get references for a return statement failure.', function(done){
+        http.get(`http://localhost:8080/api/getTokenDependents?filePath=examples/ex3.ts&line=4&offset=5`, function (res) {
+            return Promise.resolve().then(() => {
+                expect(res.statusCode).to.equal(204);
+                expect(res.statusMessage).to.equal('NO CONTENT');
+                res.on('data', (data) => {
+                    return Promise
+                        .resolve()
+                        .then(() => {
+                            console.log(data);
+                        })
+                        .then(done)
+                        .catch(() => {throw new Error('Getting body of data failed!')});
+                });
+            }).catch(done);
+        }); 
+    });
+
+    it('get definitions for a return statement failure.', function(done){
+        http.get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex3.ts&line=4&offset=5`, function (res) {
+            return Promise.resolve().then(() => {
+                expect(res.statusCode).to.equal(204);
+                expect(res.statusMessage).to.equal('NO CONTENT');
+                res.on('data', (data) => {
+                    return Promise
+                        .resolve()
+                        .then(() => {
+                            console.log(data);
+                        })
+                        .then(done)
+                        .catch(() => {throw new Error('Getting body of data failed!')});
+                });
+            }).catch(done);
+        }); 
+    });
+
+    it.only('get type for a return statement failure.', function(done){
+        http.get(`http://localhost:8080/api/getTokenType?filePath=examples/ex3.ts&line=4&offset=5`, function (res) {
+            return Promise.resolve().then(() => {
+                expect(res.statusCode).to.equal(204);
+                expect(res.statusMessage).to.equal('NO CONTENT');
+                res.on('data', (data) => {
+                    return Promise
+                        .resolve()
+                        .then(() => {
+                            expect(data.toString()).to.not.equal(`{"seq":0,"type":"response","command":"quickinfo","request_seq":2,"success":false,"message":"No%20content%20available."}`);
+                            expect(data.length).to.equal(0);
+                        })
+                        .then(done)
+                        .catch(err => {throw err});
+                });
+            }).catch(done);
+        }); 
+    });
 });
