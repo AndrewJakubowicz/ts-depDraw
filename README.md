@@ -88,7 +88,8 @@ references: []
 
  - [x] Get text from file.
  - [x] Get token information from file.
- - [ ] Get dependencies for a token.
- - [ ] Get dependents for a token.
+ - [x] Get dependencies for a token.
+ - [x] Get dependents for a token.
  - [ ] Create frontend repo.
  - [ ] Use opn to open browser.
+ - [ ] Fix tests so that things are legit.
