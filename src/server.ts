@@ -173,6 +173,10 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
 
     tssServer.quickinfo(filePath, line, offset, (err, response, request) => {
         winston.log('trace', `Response of type`, response);
+        if (!JSON.parse(response).success){
+            res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+            return
+        }
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
     });

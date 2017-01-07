@@ -273,16 +273,8 @@ describe('Stablity tests', function() {
         http.get(`http://localhost:8080/api/getTokenDependents?filePath=examples/ex3.ts&line=4&offset=5`, function (res) {
             return Promise.resolve().then(() => {
                 expect(res.statusCode).to.equal(204);
-                expect(res.statusMessage).to.equal('NO CONTENT');
-                res.on('data', (data) => {
-                    return Promise
-                        .resolve()
-                        .then(() => {
-                            console.log(data);
-                        })
-                        .then(done)
-                        .catch(() => {throw new Error('Getting body of data failed!')});
-                });
+                expect(res.statusMessage).to.equal('No Content');
+                done();
             }).catch(done);
         }); 
     });
@@ -291,16 +283,8 @@ describe('Stablity tests', function() {
         http.get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex3.ts&line=4&offset=5`, function (res) {
             return Promise.resolve().then(() => {
                 expect(res.statusCode).to.equal(204);
-                expect(res.statusMessage).to.equal('NO CONTENT');
-                res.on('data', (data) => {
-                    return Promise
-                        .resolve()
-                        .then(() => {
-                            console.log(data);
-                        })
-                        .then(done)
-                        .catch(() => {throw new Error('Getting body of data failed!')});
-                });
+                expect(res.statusMessage).to.equal('No Content');
+                done();
             }).catch(done);
         }); 
     });
@@ -309,17 +293,8 @@ describe('Stablity tests', function() {
         http.get(`http://localhost:8080/api/getTokenType?filePath=examples/ex3.ts&line=4&offset=5`, function (res) {
             return Promise.resolve().then(() => {
                 expect(res.statusCode).to.equal(204);
-                expect(res.statusMessage).to.equal('NO CONTENT');
-                res.on('data', (data) => {
-                    return Promise
-                        .resolve()
-                        .then(() => {
-                            expect(data.toString()).to.not.equal(`{"seq":0,"type":"response","command":"quickinfo","request_seq":2,"success":false,"message":"No%20content%20available."}`);
-                            expect(data.length).to.equal(0);
-                        })
-                        .then(done)
-                        .catch(err => {throw err});
-                });
+                expect(res.statusMessage).to.equal('No Content');
+                done();
             }).catch(done);
         }); 
     });
