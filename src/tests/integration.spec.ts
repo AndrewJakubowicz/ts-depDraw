@@ -269,7 +269,7 @@ describe('Stablity tests', function() {
         done();
     });
 
-    it('get references for a return statement failure.', function(done){
+    it('get token dependents for a return statement failure.', function(done){
         http.get(`http://localhost:8080/api/getTokenDependents?filePath=examples/ex3.ts&line=4&offset=5`, function (res) {
             return Promise.resolve().then(() => {
                 expect(res.statusCode).to.equal(204);

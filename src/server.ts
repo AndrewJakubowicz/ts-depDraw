@@ -221,6 +221,10 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
             resolve(response);
         });
     }).then((response: string) => {
+        if (!JSON.parse(response).success){
+            res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+            return
+        }
         return jsonUtil.parseEscaped(response)
     }, errFunc)
     .then(resp => {
@@ -303,6 +307,10 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
         });
     })
     .then(stringResponse => {
+        if (!JSON.parse(stringResponse as string).success){
+            res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(stringResponse as string)));
+            return
+        }
         return jsonUtil.parseEscaped((stringResponse as string));
     })
     .then(referenceObject => {
@@ -361,7 +369,7 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
 });
 
 /**
- * Helper function for making sure that 
+ * Helper function for making sure that query contains filePath, line and offset properties.
  */
 function sanitiseFileLineOffset(req: express.Request, res: express.Response){
     if (!(req.query.hasOwnProperty('filePath') && req.query.hasOwnProperty('line') && req.query.hasOwnProperty('offset'))) {
@@ -378,7 +386,7 @@ function sanitiseFileLineOffset(req: express.Request, res: express.Response){
 }
 
 /**
- * Helper function that binary searches a file list.
+ * Helper function that ~~binary~~ searches a file list.
  */
 function extractTokensFromFile(fileTokenList, start, end){
     winston.log('trace', `extractTokensFromFile called with`, arguments);
