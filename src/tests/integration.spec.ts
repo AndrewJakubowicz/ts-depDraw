@@ -240,7 +240,7 @@ describe('Server Cache:', function () {
 });
 
 
-describe('Stablity tests', function() {
+describe.only('Stablity tests', function() {
     this.timeout(6000);
     let serverProcess : child_process.ChildProcess;
 
@@ -291,6 +291,16 @@ describe('Stablity tests', function() {
 
     it('get type for a return statement failure.', function(done){
         http.get(`http://localhost:8080/api/getTokenType?filePath=examples/ex3.ts&line=4&offset=5`, function (res) {
+            return Promise.resolve().then(() => {
+                expect(res.statusCode).to.equal(204);
+                expect(res.statusMessage).to.equal('No Content');
+                done();
+            }).catch(done);
+        }); 
+    });
+
+    it('get token dependents for a function token failure.', function(done){
+        http.get(`http://localhost:8080/api/getTokenDependents?filePath=examples/ex7_deepNesting.ts&line=22&offset=16`, function (res) {
             return Promise.resolve().then(() => {
                 expect(res.statusCode).to.equal(204);
                 expect(res.statusMessage).to.equal('No Content');

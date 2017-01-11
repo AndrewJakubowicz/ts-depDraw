@@ -192,9 +192,12 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
 server.get('/api/getTokenDependencies', (req: express.Request, res: express.Response) => {
     winston.log('info', `Query for getTokenDependencies:`, req.query);
 
-    let errFunc = (err) => {
+    let errFunc = (err: Error) => {
         winston.log('error', `Error occurred in getTokenDependencies`, err);
-        return res.status(500).send('Internal Server Error');
+        if (!res.finished){
+            return res.status(500).send('Internal Server Error');
+        }
+        return
     }
 
     if (sanitiseFileLineOffset(req, res) !== true){
@@ -223,7 +226,7 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
     }).then((response: string) => {
         if (!JSON.parse(response).success){
             res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
-            return
+            throw new Error('success false');
         }
         return jsonUtil.parseEscaped(response)
     }, errFunc)
@@ -282,7 +285,10 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
 
     let errFunc = (err) => {
         winston.log('error', `Error occurred in getTokenDependents`, err);
-        return res.status(500).send('Internal Server Error');
+        if (!res.finished){
+            return res.status(500).send('Internal Server Error');
+        }
+        
     }
 
     if (sanitiseFileLineOffset(req, res) !== true){
@@ -309,7 +315,7 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
     .then(stringResponse => {
         if (!JSON.parse(stringResponse as string).success){
             res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(stringResponse as string)));
-            return
+            throw new Error('success false');
         }
         return jsonUtil.parseEscaped((stringResponse as string));
     })
