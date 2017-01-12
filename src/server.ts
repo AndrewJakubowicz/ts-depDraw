@@ -366,8 +366,11 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
         winston.log('trace', `reflength and navTrees length`, references.length, navTrees.length);
         references.forEach((tokenRef, i) => {
             winston.log('trace', `Dispatching traverseNavTreeToken on `, navTrees[i].body, `and token reference`, tokenRef);
-            scopesAffectedByReference.push(...traverseNavTreeToken(navTrees[i].body, tokenRef))
+            let _tempDependents = traverseNavTreeToken(navTrees[i].body, tokenRef);
+            winston.log('trace', '_tempDependents:', _tempDependents, 'for token:', tokenRef);
+            scopesAffectedByReference.push(..._tempDependents);
         });
+        winston.log('trace', `scopesAffectedByReference after forEach:`, scopesAffectedByReference)
         return scopesAffectedByReference
     }).then(scopesAffected => {
         res.setHeader('Content-Type', 'application/json');
@@ -417,6 +420,7 @@ function extractTokensFromFile(fileTokenList, start, end){
  */
 function traverseNavTreeToken(navTreeToken, refToken, results = []): any[]{
     if (!tokenInRange(navTreeToken.spans[0].start,navTreeToken.spans[0].end, refToken.start)){
+        winston.log('trace', `inside tokenInRange, returning empty`);
         return []
     }
     let leafToken = {text: navTreeToken.text,
@@ -430,7 +434,7 @@ function traverseNavTreeToken(navTreeToken, refToken, results = []): any[]{
         results.push(leafToken);
     }
     navTreeToken.childItems.forEach(token => {
-        results.push(...traverseNavTreeToken(token, refToken, results))
+        results.push(...traverseNavTreeToken(token, refToken, []))
     });
     winston.log('trace', `Results array: `, results);
     return results

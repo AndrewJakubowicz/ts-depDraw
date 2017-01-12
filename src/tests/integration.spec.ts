@@ -320,4 +320,16 @@ describe('Stablity tests', function() {
             }).catch(done);
         }); 
     });
+
+    it('make sure there arent repeats.', function(done){
+        http.get(`http://localhost:8080/api/getTokenDependents?filePath=examples/ex7_deepNesting.ts&line=20&offset=10`, function (res) {
+            return Promise.resolve().then(() => {
+                expect(res.statusCode).to.equal(200);
+                res.on('data', (data) => {
+                    expect(data.toString()).to.equal(`[{"text":"%3Cglobal%3E","kind":"script","kindModifiers":"","spans":[{"start":{"line":1,"offset":1},"end":{"line":26,"offset":2}}]},{"text":"A","kind":"function","kindModifiers":"","spans":[{"start":{"line":3,"offset":1},"end":{"line":16,"offset":2}}]},{"text":"B","kind":"function","kindModifiers":"","spans":[{"start":{"line":5,"offset":5},"end":{"line":15,"offset":6}}]}]`);
+                    done()
+                })
+            }).catch(done);
+        }); 
+    });
 });
