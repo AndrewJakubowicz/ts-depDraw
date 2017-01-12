@@ -93,3 +93,10 @@ references: []
  - [ ] Create frontend repo.
  - [ ] Use opn to open browser.
  - [ ] Fix tests so that things are legit.
+
+
+ # Known Bugs
+
+ - [ ] Dependencies are anything in scope. Regardless if they are actual dependencies.
+ - [ ] Function declaration headers are listed as dependencies.
+ - [ ] Duplicated dependents for some tokens.
