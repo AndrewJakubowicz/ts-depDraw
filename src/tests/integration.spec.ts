@@ -308,4 +308,16 @@ describe.only('Stablity tests', function() {
             }).catch(done);
         }); 
     });
+
+    it.only('get definitions for a function with no dependencies or dependents', function(done){
+        http.get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex7_deepNesting.ts&line=22&offset=14`, function (res) {
+            return Promise.resolve().then(() => {
+                expect(res.statusCode).to.equal(200);
+                res.on('data', (data) => {
+                    expect(data.toString()).to.equal('[]');
+                    done()
+                })
+            }).catch(done);
+        }); 
+    });
 });

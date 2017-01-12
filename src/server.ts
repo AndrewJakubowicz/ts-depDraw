@@ -188,6 +188,8 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
  * 
  * Finds definition of token, and then filters the tokens from the definition filePath
  * to only include the tokens which are Indentifiers and within the start and end range.
+ * 
+ * QuickInfo is then called on the dependencies found to get their info and an array is sent.
  */
 server.get('/api/getTokenDependencies', (req: express.Request, res: express.Response) => {
     winston.log('info', `Query for getTokenDependencies:`, req.query);
@@ -253,7 +255,7 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
     .then(selectTokens => {
         // This is where we filter by token type.
         return selectTokens.filter(token => {
-            return token.type === 'Identifier';
+            return (token.type === 'Identifier' && (!(token.start.line === line && token.start.character === offset))) ;
         });
     }).then(selectedTokens => {
         // Here we are adding metadata.
