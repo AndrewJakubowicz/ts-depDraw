@@ -96,6 +96,7 @@ export class Tsserver {
                     .toString()
                     .split(/\r\n|\n/)
                     .filter(v => {
+                        console.log(v);
                         return !(v === '' || v.slice(0, 14) === 'Content-Length')
                     });
 
@@ -570,7 +571,7 @@ export function removeDuplicateReference(compressedReference : TokenIdentifierDa
  */
 function initScannerState() : ts.Scanner {
     // TODO: scanner matches tsconfig.
-    let scanner = ts.createScanner(ts.ScriptTarget.Latest, false);
+    let scanner = ts.createScanner(ts.ScriptTarget.Latest, true);
     scanner.setOnError((message, length) => {
         winston.warn(`${JSON.stringify(message)}`);
     });

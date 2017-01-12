@@ -100,3 +100,5 @@ references: []
  - [ ] Dependencies are anything in scope. Regardless if they are actual dependencies.
  - [ ] Function declaration headers are listed as dependencies.
  - [x] Duplicated dependents for some tokens.
+ - [ ] tsserver chunks responses which can break JSON parse.
+ - [ ] Template literal strings don't tokenize properly.
