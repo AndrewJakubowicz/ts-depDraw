@@ -3,8 +3,11 @@
  *
  * This module exposes some of the funcitonality of the tsserver.
  */
+
+// Reference the protocol.d.ts used by tsserver
+/// <reference path="../node_modules/typescript/lib/protocol.d.ts" />
+
 import * as path from "path";
-import * as readline from "readline";
 import * as fs from "fs";
 import * as assert from "assert";
 import * as ts from "TypeScript";
@@ -14,51 +17,61 @@ import * as child_process from "child_process";
 import * as winston from "./appLogger";
 import * as jsonUtil from './util/jsonUtil';
 
+// imports for new code
+import {TransformStream, WriteStream} from "./util/customStreams";
 
-/**
- * CACHE for the file tokens.
- */
-let FILE_TOKENS_ARRAY: Map<string,any> = new Map();
 
-/** What files has tsserver opened */
-let OPENED_FILES: Map<string,boolean> = new Map();
+export class TsserverWrapper {
+    private proc: child_process.ChildProcess;
+    private seq: number = 0;
 
-/**
- * methods fileScanner accepts
- */
-enum CommandMethodsFileScan {
-    Definition,
-    References
-}
+    private responseCallbackStore = [];
 
-/**
- * Request body interface
- *
- * The idea of this interface is to retain information about the token that the definition is called on.
- */
-interface RequestBody {
-    tokenText : string;
-    tokenType : string;
-    filePath : string;
-}
+    constructor() {
+        console.log("Spawning tsserver");
+        const args = [
+            "node_modules/typescript/bin/tsserver"
+        ];
 
-// Basic command used by Open.
-interface SimpleCommand {
-    seq : number
-    type : string
-    command : string
-    arguments : {
-        file: string
+        this.proc = child_process.spawn("node", args);
+
+        let doublingStream = new TransformStream();
+        let writingStream = new WriteStream(this.responseCallbackStore);
+        
+        // What happens to the output from the 
+        this.proc.stdout.pipe(doublingStream).pipe(writingStream);
+        this.proc.stderr.on('data', d => {
+            console.log('stderr:', d);
+        })
     }
-}
 
-// Basic command used by define, reference
-interface LookupCommand extends SimpleCommand {
-    arguments : {
-        file: string
-        line: number
-        offset: number
+    open(filePath: string) {
+
+        let OpnCommand: protocol.OpenRequest = {
+            command: "open",
+            seq: this.seq,
+            type: "request",
+            arguments: (<protocol.OpenRequestArgs>{
+                scriptKindName: "JS",
+                file: filePath
+            })
+        }
+
+        return new Promise((fulfill, reject) => {
+            this.responseCallbackStore.push((err, response) => {
+                if (err) {
+                    reject(err);
+                }
+                console.log("Fulfilling promise");
+                fulfill(response)
+            });
+            
+            this.proc.stdin.write(JSON.stringify(OpnCommand) + '\n');
+
+        })
+        
     }
+
 }
 
 /**
