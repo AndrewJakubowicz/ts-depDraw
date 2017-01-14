@@ -21,6 +21,24 @@ import * as jsonUtil from './util/jsonUtil';
 import {TransformStream, WriteStream} from "./util/customStreams";
 
 
+// Function that sends a command object and returns a promise.
+// Mutates a callbackStore.
+const sendCommand = (command, callbackStore, childProcess) => {
+    winston.log('trace', 'sendingCommand:', command);
+    return new Promise((fulfill, reject) => {
+            callbackStore.push((err, response) => {
+                if (err) {
+                    reject(err);
+                }
+                console.log("Fulfilling promise");
+                fulfill(response)
+            });
+            
+            childProcess.stdin.write(JSON.stringify(command) + '\n');
+
+        });
+}
+
 export class TsserverWrapper {
     private proc: child_process.ChildProcess;
     private seq: number = 0;
@@ -47,32 +65,39 @@ export class TsserverWrapper {
 
     open(filePath: string) {
 
+        // Todo: revisit the scriptKindName property.
         let OpnCommand: protocol.OpenRequest = {
             command: "open",
             seq: this.seq,
             type: "request",
             arguments: (<protocol.OpenRequestArgs>{
-                scriptKindName: "JS",
+                // scriptKindName: "JS",
                 file: filePath
             })
         }
-
-        return new Promise((fulfill, reject) => {
-            this.responseCallbackStore.push((err, response) => {
-                if (err) {
-                    reject(err);
-                }
-                console.log("Fulfilling promise");
-                fulfill(response)
-            });
-            
-            this.proc.stdin.write(JSON.stringify(OpnCommand) + '\n');
-
-        })
+        this.seq ++;
+        return sendCommand(OpnCommand, this.responseCallbackStore, this.proc);
         
     }
 
+    quickinfo(filePath: string, lineNumber: number, offset: number) {
+        let commandObj = {
+            seq: this.seq,
+            type: "request",
+            command: "quickinfo",
+            arguments: {
+                file: filePath,
+                line: lineNumber,
+                offset: offset
+            }
+        }
+
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+    }
+
 }
+
 
 /**
  * Wrapper for tsserver.
