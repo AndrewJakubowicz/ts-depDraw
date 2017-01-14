@@ -20,21 +20,36 @@ global.rootFile = 'examples/ex3.ts';
 
 describe.only("Test TsserverWrapper", function(){
     this.timeout(10000);
-    it("Spawns a tsserver", function(done){
+
+    it("Spawns a tsserver and tests open command", function(done){
         let wrapper = new tss.TsserverWrapper();
         wrapper.open("examples/ex1.ts")
             .then((response) => {
-                console.log("THIS IS THE RESPONSE:", response)
+                expect(response).to.equal(`{"seq":0,"type":"event","event":"configFileDiag","body":{"triggerFile":"examples/ex1.ts","configFile":"tsconfig.json","diagnostics":[]}}`);
                 done();
-        });
+        })
+        .catch(done);
     });
-    it("Spawns a tsserver", function(done){
+
+    it("Tests the quickInfo command", function(done){
         let wrapper = new tss.TsserverWrapper();
         wrapper.open("examples/ex1.ts")
             .then(() => wrapper.quickinfo("examples/ex1.ts", 5, 15))
             .then(response => {
-                expect(response).to.equal(`{"seq":0,"type":"response","command":"quickinfo","request_seq":1,"success":true,"body":{"kind":"function","kindModifiers":"","start":{"line":5,"offset":13},"end":{"line":5,"offset":18},"displayString":"function adder(a: any, b: any): any","documentation":""}`);
+                expect(response).to.equal(`{"seq":0,"type":"response","command":"quickinfo","request_seq":1,"success":true,"body":{"kind":"function","kindModifiers":"","start":{"line":5,"offset":13},"end":{"line":5,"offset":18},"displayString":"function adder(a: any, b: any): any","documentation":""}}`);
                 done();
             })
+            .catch(done);
+    });
+
+    it("Tests the definition command", function(done){
+        let wrapper = new tss.TsserverWrapper();
+        wrapper.open("examples/ex1.ts")
+            .then(() => wrapper.definition("examples/ex1.ts", 5, 15))
+            .then(response => {
+                expect(response).to.equal(`{"seq":0,"type":"response","command":"definition","request_seq":1,"success":true,"body":[{"file":"examples/ex1.ts","start":{"line":7,"offset":1},"end":{"line":9,"offset":2}}]}`);
+                done();
+            })
+            .catch(done);
     });
 })

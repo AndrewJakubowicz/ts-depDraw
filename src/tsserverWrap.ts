@@ -75,9 +75,9 @@ export class TsserverWrapper {
                 file: filePath
             })
         }
+
         this.seq ++;
         return sendCommand(OpnCommand, this.responseCallbackStore, this.proc);
-        
     }
 
     quickinfo(filePath: string, lineNumber: number, offset: number) {
@@ -85,6 +85,22 @@ export class TsserverWrapper {
             seq: this.seq,
             type: "request",
             command: "quickinfo",
+            arguments: {
+                file: filePath,
+                line: lineNumber,
+                offset: offset
+            }
+        }
+
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+    }
+
+    definition(filePath: string, lineNumber: number, offset: number) {
+        let commandObj = {
+            seq: this.seq,
+            type: "request",
+            command: "definition",
             arguments: {
                 file: filePath,
                 line: lineNumber,
