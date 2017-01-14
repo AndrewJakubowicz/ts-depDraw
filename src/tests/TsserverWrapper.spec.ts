@@ -52,4 +52,15 @@ describe.only("Test TsserverWrapper", function(){
             })
             .catch(done);
     });
+
+    it("Tests the references command", function(done){
+        let wrapper = new tss.TsserverWrapper();
+        wrapper.open("examples/ex1.ts")
+            .then(() => wrapper.references("examples/ex1.ts", 5, 15))
+            .then(response => {
+                expect(response).to.equal(`{"seq":0,"type":"response","command":"references","request_seq":1,"success":true,"body":{"refs":[{"file":"examples/ex1.ts","start":{"line":5,"offset":13},"lineText":"console.log(adder(3,4));","end":{"line":5,"offset":18},"isWriteAccess":false,"isDefinition":false},{"file":"examples/ex1.ts","start":{"line":7,"offset":10},"lineText":"function adder(a,b){","end":{"line":7,"offset":15},"isWriteAccess":true,"isDefinition":true}],"symbolName":"adder","symbolStartOffset":13,"symbolDisplayString":"function adder(a: any, b: any): any"}}`);
+                done();
+            })
+            .catch(done);
+    });
 })

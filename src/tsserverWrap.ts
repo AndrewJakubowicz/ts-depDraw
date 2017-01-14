@@ -112,6 +112,22 @@ export class TsserverWrapper {
         return sendCommand(commandObj, this.responseCallbackStore, this.proc);
     }
 
+    references(filePath: string, lineNumber: number, offset: number) {
+        let commandObj = {
+            seq: this.seq,
+            type: "request",
+            command: "references",
+            arguments: {
+                file: filePath,
+                line: lineNumber,
+                offset: offset
+            }
+        }
+
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+    }
+
 }
 
 
