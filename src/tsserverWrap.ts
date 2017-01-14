@@ -128,6 +128,30 @@ export class TsserverWrapper {
         return sendCommand(commandObj, this.responseCallbackStore, this.proc);
     }
 
+    /**
+     * Implementation returns the scope of the definition of the token.
+     * 
+     * returns object with property:
+     *      body:[{"file":"",
+     *             "start":{"line":7,"offset":1},
+     *             "end":{"line":9,"offset":2}}]
+     */
+    implementation(filePath: string, lineNumber: number, offset: number) {
+        let commandObj = {
+            seq: this.seq,
+            type: "request",
+            command: "implementation",
+            arguments: {
+                file: filePath,
+                line: lineNumber,
+                offset: offset
+            }
+        }
+
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+    }
+
 }
 
 

@@ -63,4 +63,15 @@ describe.only("Test TsserverWrapper", function(){
             })
             .catch(done);
     });
+
+    it("Tests the implementation command", function(done){
+        let wrapper = new tss.TsserverWrapper();
+        wrapper.open("examples/ex1.ts")
+            .then(() => wrapper.implementation("examples/ex1.ts", 5, 15))
+            .then(response => {
+                expect(response).to.equal(`{"seq":0,"type":"response","command":"implementation","request_seq":1,"success":true,"body":[{"file":"examples/ex1.ts","start":{"line":7,"offset":1},"end":{"line":9,"offset":2}}]}`);
+                done();
+            })
+            .catch(done);
+    });
 })
