@@ -66,7 +66,7 @@ export class TsserverWrapper {
     open(filePath: string) {
 
         // Todo: revisit the scriptKindName property.
-        let OpnCommand: protocol.OpenRequest = {
+        let commandObj: protocol.OpenRequest = {
             command: "open",
             seq: this.seq,
             type: "request",
@@ -77,7 +77,7 @@ export class TsserverWrapper {
         }
 
         this.seq ++;
-        return sendCommand(OpnCommand, this.responseCallbackStore, this.proc);
+        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
     }
 
     quickinfo(filePath: string, lineNumber: number, offset: number) {
@@ -148,6 +148,20 @@ export class TsserverWrapper {
             }
         }
 
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+    }
+
+    navtree(filePath: string) {
+        let commandObj = {
+            seq: this.seq,
+            type: "request",
+            command: "navtree",
+            arguments: {
+                file: path.join(filePath)
+            }
+        }
+        
         this.seq ++;
         return sendCommand(commandObj, this.responseCallbackStore, this.proc);
     }
