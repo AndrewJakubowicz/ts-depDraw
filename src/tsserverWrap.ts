@@ -9,16 +9,15 @@
 
 import * as path from "path";
 import * as fs from "fs";
-import * as assert from "assert";
 import * as ts from "TypeScript";
 
 import * as child_process from "child_process";
 
 import * as winston from "./appLogger";
-import * as jsonUtil from './util/jsonUtil';
 
-// imports for new code
 import {TransformSplitResponseStream, WriteStream} from "./util/customStreams";
+
+import {languageServiceHost} from './languageService';
 
 
 // Function that sends a command object and returns a promise.
@@ -196,4 +195,5 @@ export class TsserverWrapper {
     }
 
 }
+
 

@@ -33,6 +33,11 @@ import * as path from 'path';
 import * as winston from "./appLogger";
 import * as tss from "./tsserverWrap";
 import * as jsonUtil from './util/jsonUtil';
+import {languageServiceHost} from './languageService';
+
+const languageHost = languageServiceHost;
+
+
 
 // Server creation
 let server = express();
@@ -41,6 +46,10 @@ let tssServer = new tss.TsserverWrapper();
 // Check globals
 global.tsconfigRootDir = global.tsconfigRootDir || (() => {throw new Error('tsconfigRootDir not set')})();
 global.rootFile = global.rootFile || (() => {throw new Error('rootFile not set')})();
+
+
+// languageHost.getEncodedSemanticClassifications()
+
 
 // Loads the project into tsserver.
 setTimeout(() => {
