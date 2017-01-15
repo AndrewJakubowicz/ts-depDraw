@@ -28,10 +28,20 @@ const sendCommand = (command, callbackStore, childProcess) => {
     return new Promise((fulfill, reject) => {
             callbackStore.push((err, response) => {
                 if (err) {
-                    reject(err);
+                    return reject(err);
                 }
-                console.log("Fulfilling promise");
-                fulfill(response)
+
+                let responseObj;
+                winston.log('trace', 'parsing response:', response);
+                try {
+                    responseObj = JSON.parse(response);
+                }
+                catch (err) {
+                    winston.log('error', 'Parse of response failed:', response);
+                    return reject(err)
+                }
+
+                return fulfill(responseObj)
             });
             
             childProcess.stdin.write(JSON.stringify(command) + '\n');
