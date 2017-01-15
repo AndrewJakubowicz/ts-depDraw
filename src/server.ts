@@ -83,7 +83,7 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
 
     // Initiate tssServer open callback.
     tssServer.open(filePath)
-        .then( response => { winston.log('trace', 'promise fulfilled:', JSON.parse(response as string))})
+        .then( response => { winston.log('trace', 'promise fulfilled:', response)})
         .catch(err => { throw err });
 
     // Grab file text
@@ -123,21 +123,17 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
         offset = parseInt(req.query['offset']);
     
     tssServer.open(filePath)
-        .then(_ => { winston.log('trace', `opened ${filePath}`)});
+        .then( _ => { winston.log('trace', `opened ${filePath}`)});
 
     tssServer.quickinfo(filePath, line, offset)
         .then(response => {
             winston.log('trace', `Response of type`, response);
-            if (!JSON.parse(response).success){
-                res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
-                return
-            }
             res.setHeader('Content-Type', 'application/json');
-            return res.status(200).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+            return res.status(200).send(JSON.stringify(response));
         })
-     {
-        
-    });
+        .catch(err => {
+            winston.log('error', 'error in quickinfo in server', err);
+        });
 });
 
 
@@ -258,83 +254,66 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
     
-    tssServer.open(filePath, err => {
-        if (err) {
-            winston.log('error', `Couldn't open file`, err);
-            return res.status(500).send('Internal error');
-        }
-    });
+    tssServer.open(filePath)
+        .then( _ => { winston.log('trace', 'opened:', filePath)})
+        .catch(errFunc);
+
+    winston.log('trace', 'open, now references');
     
-    let findReferences = new Promise((resolve, reject) => {
-        tssServer.references(filePath, line, offset, (err, res) => {
-            winston.log('trace', `Response: `, res);
-            if (err) reject(err);
-            resolve(res);
-        });
-    })
-    .then(stringResponse => {
-        if (!JSON.parse(stringResponse as string).success){
-            res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(stringResponse as string)));
-            throw new Error('success false');
-        }
-        return jsonUtil.parseEscaped((stringResponse as string));
-    })
-    .then(referenceObject => {
-        winston.log('trace', `referenceObject: `, referenceObject);
-        let references = referenceObject.body.refs;
-        return (references as any[]).filter( refToken => !refToken.isDefinition );
-    })
-    .then(filteredList => {
-        // Here we need to collect a list of unique file paths.
-        winston.log('trace', `filtered referenceObject: `, filteredList);
-        let filePaths: Set<string> = new Set(); // Sets are iterated over in insertion order.
-        let relativePath: string;
+    tssServer.references(filePath, line, offset)
+        .then(responseObject => {
+            if (!(responseObject as any).success){
+                res.status(204).send();
+                throw new Error('references success false');
+            }
+            return responseObject
+        })
+        .then(referenceObject => {
+            winston.log('trace', `referenceObject: `, referenceObject);
+            let references = referenceObject.body.refs;
+            return (references as any[]).filter( refToken => !refToken.isDefinition );
+        })
+        .then(filteredList => {
+            // Here we need to collect a list of unique file paths.
+            winston.log('trace', `filtered referenceObject: `, filteredList);
+            let filePaths: Set<string> = new Set(); // Sets are iterated over in insertion order.
+            let relativePath: string;
 
-        (filteredList as any[]).forEach(token => {
-            relativePath = path.relative(global.tsconfigRootDir, token.file);
-            filePaths.has(relativePath) || filePaths.add(relativePath);
-        });
+            (filteredList as any[]).forEach(token => {
+                relativePath = path.relative(global.tsconfigRootDir, token.file);
+                filePaths.has(relativePath) || filePaths.add(relativePath);
+            });
 
-        let navtreePromises = [];
-        filePaths.forEach(relativeFilePath => {
-            navtreePromises.push(new Promise((resolve, reject) => {
-                tssServer.open(relativeFilePath, err => {
-                    if (err){
-                        winston.log('error', `opening file failed`, err);
-                        return reject(err)
-                    }
-                });
-                tssServer.navtree(relativeFilePath, (err, res) => {
-                    if (err) {
-                        winston.log('error', `navtree method failed`, err);
-                        return reject(err);
-                    }
-                    return resolve(jsonUtil.parseEscaped(res));
-                });
-            }));
-        });
-        // This promise is all the unique navtrees.
-        return Promise.all([...navtreePromises, filteredList]);
-    }).then(navTreeResponse => {
-        winston.log('trace', `Response to navtree:`, navTreeResponse);
-        let references = (navTreeResponse as any[]).slice(-1)[0];
-        let navTrees = navTreeResponse.slice(0, -1);
+            let navtreePromises = [];
+            filePaths.forEach(relativeFilePath => {
+                tssServer.open(relativeFilePath)
+                    .catch(errFunc)
+                
+                navtreePromises.push(tssServer.navtree(relativeFilePath))
+            });
 
-        let scopesAffectedByReference = [];
-        winston.log('trace', `reflength and navTrees length`, references.length, navTrees.length);
-        references.forEach((tokenRef, i) => {
-            winston.log('trace', `Dispatching traverseNavTreeToken on `, navTrees[i].body, `and token reference`, tokenRef);
-            let _tempDependents = traverseNavTreeToken(navTrees[i].body, tokenRef);
-            winston.log('trace', '_tempDependents:', _tempDependents, 'for token:', tokenRef);
-            scopesAffectedByReference.push(..._tempDependents);
-        });
-        winston.log('trace', `scopesAffectedByReference after forEach:`, scopesAffectedByReference)
-        return scopesAffectedByReference
-    }).then(scopesAffected => {
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(200).send(jsonUtil.stringifyEscape(scopesAffected));
-    })
-    .catch(errFunc);
+            // This promise is all the unique navtrees.
+            return Promise.all([...navtreePromises, filteredList]);
+        }).then(navTreeResponse => {
+            winston.log('trace', `Response to navtree:`, navTreeResponse);
+            let references = (navTreeResponse as any[]).slice(-1)[0];
+            let navTrees = navTreeResponse.slice(0, -1);
+
+            let scopesAffectedByReference = [];
+            winston.log('trace', `reflength and navTrees length`, references.length, navTrees.length);
+            references.forEach((tokenRef, i) => {
+                winston.log('trace', `Dispatching traverseNavTreeToken on `, navTrees[i].body, `and token reference`, tokenRef);
+                let _tempDependents = traverseNavTreeToken(navTrees[i].body, tokenRef);
+                winston.log('trace', '_tempDependents:', _tempDependents, 'for token:', tokenRef);
+                scopesAffectedByReference.push(..._tempDependents);
+            });
+            winston.log('trace', `scopesAffectedByReference after forEach:`, scopesAffectedByReference)
+            return scopesAffectedByReference
+        }).then(scopesAffected => {
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(200).send(JSON.stringify(scopesAffected));
+        })
+        .catch(errFunc);
 });
 
 /**

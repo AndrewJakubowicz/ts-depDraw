@@ -5,17 +5,17 @@ import * as Immutable from 'Immutable';
 
 // Credit given to https://www.sandersdenardi.com/readable-writable-transform-streams-node/
 // for the amazing stream writeup that helped make this reality.
-export let TransformStream = function() {
+export let TransformSplitResponseStream = function() {
     stream.Transform.call(this, {objectMode: false});
 }
 
-util.inherits(TransformStream, stream.Transform);
+util.inherits(TransformSplitResponseStream, stream.Transform);
 
 
 // Stores the contentLength information so writeStream can wait for entire data before writing.
 let contentLengths = Immutable.Stack([]);
 
-TransformStream.prototype._transform = function(chunk, encoding, callback) {
+TransformSplitResponseStream.prototype._transform = function(chunk, encoding, callback) {
     const strChunk: string = chunk.toString();
 
     const splitChunk = strChunk.split(/\r\n|\n/);
@@ -42,7 +42,8 @@ TransformStream.prototype._transform = function(chunk, encoding, callback) {
 
 
 
-
+// WriteStream pools the response and fires the promise callback when
+// a full response is received.
 export let WriteStream = function(responseCallbackBacklog: Array<any>) {
     this.store = responseCallbackBacklog;
     stream.Writable.call(this, {objectMode: false});
@@ -66,11 +67,10 @@ WriteStream.prototype._write = function (chunk, encoding, callback) {
         // Call the response with correct chunk.
         (responseCallbackBacklog.shift())(null, chunkBuffer)
         chunkBuffer = "";
-        callback();
-        return
+        return callback();
     }
 
-    console.log("Building up chunkBuffer");
+
     chunkBuffer += chunk.toString();
     try {
         assert(contentLengths.first() < chunkBuffer.length, 'ContentLength MUST always be less than chunkBuffer.length');

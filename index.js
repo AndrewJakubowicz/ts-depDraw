@@ -19,7 +19,7 @@ if (global.startServer) {
         .SERVER
         .listen(PORT, (err) => {
             if (err) {
-                return console.log(`Error starting server: ${err}`);
+                return winston.log('error', `Error starting server: ${err}`);
             }
             console.log(`Server started and listening on port: ${PORT}`);
         })

@@ -18,7 +18,7 @@ import * as winston from "./appLogger";
 import * as jsonUtil from './util/jsonUtil';
 
 // imports for new code
-import {TransformStream, WriteStream} from "./util/customStreams";
+import {TransformSplitResponseStream, WriteStream} from "./util/customStreams";
 
 
 // Function that sends a command object and returns a promise.
@@ -33,6 +33,7 @@ const sendCommand = (command, callbackStore, childProcess) => {
 
                 let responseObj;
                 winston.log('trace', 'parsing response:', response);
+
                 try {
                     responseObj = JSON.parse(response);
                 }
@@ -56,26 +57,35 @@ const sendCommand = (command, callbackStore, childProcess) => {
  * returning an object.
  */
 export class TsserverWrapper {
-    private proc: child_process.ChildProcess;
+
+    private tsserverProcess: child_process.ChildProcess;
+
+    // Required to be sent into the tsserver.
+    // Increments with each new command.
     private seq: number = 0;
 
+    // Stores the promises.
     private responseCallbackStore = [];
 
     constructor() {
+
         const args = [
             "node_modules/typescript/bin/tsserver"
         ];
 
-        this.proc = child_process.spawn("node", args);
+        this.tsserverProcess = child_process.spawn("node", args);
 
-        let doublingStream = new TransformStream();
+
+        let splitStream = new TransformSplitResponseStream();
         let writingStream = new WriteStream(this.responseCallbackStore);
         
-        // What happens to the output from the 
-        this.proc.stdout.pipe(doublingStream).pipe(writingStream);
-        this.proc.stderr.on('data', d => {
-            console.log('stderr:', d);
-        })
+
+        // Piping output from tsserver.
+        this.tsserverProcess.stdout.pipe(splitStream).pipe(writingStream);
+
+        this.tsserverProcess.stderr.on('data', d => {
+            winston.log('error', 'tsserverProcess error:', d);
+        });
     }
 
     open(filePath: string) {
@@ -92,7 +102,7 @@ export class TsserverWrapper {
         }
 
         this.seq ++;
-        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
     }
 
     quickinfo(filePath: string, lineNumber: number, offset: number) {
@@ -108,7 +118,7 @@ export class TsserverWrapper {
         }
 
         this.seq ++;
-        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
     }
 
     definition(filePath: string, lineNumber: number, offset: number) {
@@ -124,7 +134,7 @@ export class TsserverWrapper {
         }
 
         this.seq ++;
-        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
     }
 
     references(filePath: string, lineNumber: number, offset: number) {
@@ -140,7 +150,7 @@ export class TsserverWrapper {
         }
 
         this.seq ++;
-        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
     }
 
     /**
@@ -164,7 +174,7 @@ export class TsserverWrapper {
         }
 
         this.seq ++;
-        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
     }
 
     navtree(filePath: string) {
@@ -178,11 +188,11 @@ export class TsserverWrapper {
         }
 
         this.seq ++;
-        return sendCommand(commandObj, this.responseCallbackStore, this.proc);
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
     }
 
     killServer() {
-        this.proc.kill();
+        this.tsserverProcess.kill();
     }
 
 }
