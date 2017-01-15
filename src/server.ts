@@ -7,15 +7,9 @@
  *
  * API:
  *
- *
- * /api/init
- *  - returns the root file for the project.
- *
  * /api/getFileText
  *  - returns plain text of the file.
- *
- * /api/getTextIdentifierTokensLocations
- *  - returns token data. Can be used to recreate the display.
+ *  - default: returns text from initiated file.
  *
  * 
  * /api/getTokenType (filePath, line, offset)
@@ -25,8 +19,10 @@
  * /api/getTokenDependencies (filePath, line, offset)
  *  - returns the dependencies.
  * 
+ * 
  * /api/getTokenDependents (filePath, line, offset)
  *  - returns the dependents.
+ * 
  */
 
 import * as http from 'http';
@@ -44,6 +40,7 @@ let tssServer = new tss.TsserverWrapper();
 
 // Check globals
 global.tsconfigRootDir = global.tsconfigRootDir || (() => {throw new Error('tsconfigRootDir not set')})();
+global.rootFile = global.rootFile || (() => {throw new Error('rootFile not set')})();
 
 // Loads the project into tsserver.
 setTimeout(() => {
@@ -66,15 +63,6 @@ server.use(function(req, res, next) {
   next();
 });
 
-/**
- * This can be called to get the first file that the user initiated the server on.
- */
-server.get('/api/init', (req : express.Request, res : express.Response) => {
-    winston.log('trace', `Responding to /api/init`, global.rootFile);
-
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(200).send(global.rootFile);
-});
 
 /**
  * Loads in plain text of the file.
@@ -117,30 +105,6 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
 
 });
 
-/**
- * getTextIdentifierTokensLocations returns the text in a specific file, with token information.
- *
- * @return token Array<{ text: string, type: string, start: {line: number, offset: number} } }>
- */
-server.get('/api/getTextIdentifierTokensLocations', (req : express.Request, res : express.Response) => {
-    winston.log('info', `Query for getTextIdentifierTokensLocations:`, req.query);
-
-    if (req.query.hasOwnProperty('filePath')) {
-        tss
-            .scanFileForIdentifierTokens(req.query["filePath"])
-            .then(tokenList => {
-                res.setHeader('Content-Type', 'application/json');
-                return res.status(200).send(jsonUtil.stringifyEscape(tokenList));
-            })
-            .catch(err => {
-                winston.log('error', `getTextIdentifierTokensLocations failed with ${err}`);
-                return res.status(500).send('Unable to text IdentifierTokensLocations!');
-            });
-    } else {
-        winston.log('error', `no filePath given in request`, req);
-        return res.status(400).send('Malformed client input.');
-    }
-});
 
 /**
  * getTokenType returns the type of a specific token.
@@ -158,21 +122,21 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
     
-    tssServer.open(filePath, err => {
-        if (err) {
-            winston.log('error', `Couldn't open file`, err);
-            return res.status(500).send('Internal error');
-        }
-    });
+    tssServer.open(filePath)
+        .then(_ => { winston.log('trace', `opened ${filePath}`)});
 
-    tssServer.quickinfo(filePath, line, offset, (err, response, request) => {
-        winston.log('trace', `Response of type`, response);
-        if (!JSON.parse(response).success){
-            res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
-            return
-        }
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(200).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+    tssServer.quickinfo(filePath, line, offset)
+        .then(response => {
+            winston.log('trace', `Response of type`, response);
+            if (!JSON.parse(response).success){
+                res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+                return
+            }
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(200).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+        })
+     {
+        
     });
 });
 

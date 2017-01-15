@@ -34,7 +34,7 @@ describe("Test TsserverWrapper", function(){
 
         wrapper.open("examples/ex1.ts")
             .then((response) => {
-                expect(JSON.parse(response as string)).to.deep.equal(correctResponse);
+                expect(response).to.deep.equal(correctResponse);
                 done();
         })
         .catch(done);
@@ -60,8 +60,7 @@ describe("Test TsserverWrapper", function(){
         wrapper.open("examples/ex1.ts")
             .then(() => wrapper.quickinfo("examples/ex1.ts", 5, 15))
             .then(response => {
-                winston.log('trace', 'quickinfo', JSON.parse(response as string));
-                expect(JSON.parse(response as string)).to.deep.equal(correctResponse);
+                expect(response).to.deep.equal(correctResponse);
                 done();
             })
             .catch(done);
@@ -84,7 +83,7 @@ describe("Test TsserverWrapper", function(){
         wrapper.open("examples/ex1.ts")
             .then(() => wrapper.definition("examples/ex1.ts", 5, 15))
             .then(response => {
-                expect(JSON.parse(response as string)).to.deep.equal(correctResponse);
+                expect(response).to.deep.equal(correctResponse);
                 done();
             })
             .catch(done);
@@ -120,7 +119,7 @@ describe("Test TsserverWrapper", function(){
         wrapper.open("examples/ex1.ts")
             .then(() => wrapper.references("examples/ex1.ts", 5, 15))
             .then(response => {
-                expect(JSON.parse(response as string)).to.deep.equal(correctResponse);
+                expect(response).to.deep.equal(correctResponse);
                 done();
             })
             .catch(done);
@@ -143,7 +142,7 @@ describe("Test TsserverWrapper", function(){
         wrapper.open("examples/ex1.ts")
             .then(() => wrapper.implementation("examples/ex1.ts", 5, 15))
             .then(response => {
-                expect(JSON.parse(response as string)).to.deep.equal(correctResponse);
+                expect(response).to.deep.equal(correctResponse);
                 done();
             })
             .catch(done);
@@ -176,7 +175,7 @@ describe("Test TsserverWrapper", function(){
         wrapper.open("examples/ex1.ts")
             .then(() => wrapper.navtree("examples/ex1.ts"))
             .then(response => {
-                expect(JSON.parse(response as string)).to.deep.equal(correctResponse);
+                expect(response).to.deep.equal(correctResponse);
                 done();
             })
             .catch(done);
@@ -185,7 +184,7 @@ describe("Test TsserverWrapper", function(){
 });
 
 
-describe.only("NavTree example", function(){
+describe("NavTree example", function(){
     this.timeout(10000);
 
     it("Navtree with nesting", function(done){
@@ -232,7 +231,7 @@ describe.only("NavTree example", function(){
         wrapper.open("examples/ex7_deepNesting.ts")
             .then(() => wrapper.navtree("examples/ex7_deepNesting.ts"))
             .then(response => {
-                expect(JSON.parse(response as string)).to.deep.equal(correctResponse);
+                expect(response).to.deep.equal(correctResponse);
                 done();
             })
             .catch(done);
