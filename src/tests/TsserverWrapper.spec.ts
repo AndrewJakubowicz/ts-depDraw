@@ -1,11 +1,10 @@
 import * as chai from 'chai';
-// var sinon = require("sinon");
+
 var expect = chai.expect;
 let should = chai.should();
 var winston = require("../appLogger");
 
 import * as tss from "../tsserverWrap";
-import * as jsonUtil from "../util/jsonUtil";
 
 var fs = require('fs');
 import * as path from 'path';
@@ -18,7 +17,7 @@ global.tsconfigRootDir = '/Users/Spyr1014/Projects/TypeScript/ts-depDraw';
 global.rootFile = 'examples/ex3.ts';
 
 
-describe.only("Test TsserverWrapper", function(){
+describe("Test TsserverWrapper", function(){
     this.timeout(10000);
 
     it("Spawns a tsserver and tests open command", function(done){
@@ -183,4 +182,60 @@ describe.only("Test TsserverWrapper", function(){
             .catch(done);
     });
 
+});
+
+
+describe.only("NavTree example", function(){
+    this.timeout(10000);
+
+    it("Navtree with nesting", function(done){
+        let wrapper = new tss.TsserverWrapper();
+
+        let correctResponse = {
+            seq: 0,
+            type: 'response',
+            command: 'navtree',
+            request_seq: 1,
+            success: true,
+            body:
+            { text: '<global>',
+                kind: 'script',
+                kindModifiers: '',
+                spans: [ { start: { line: 1, offset: 1 }, end: { line: 26, offset: 2 } } ],
+                childItems:
+                [ { text: 'A',
+                    kind: 'function',
+                    kindModifiers: '',
+                    spans: [ { start: { line: 3, offset: 1 }, end: { line: 16, offset: 2 } } ],
+                    childItems:
+                    [ { text: 'B',
+                        kind: 'function',
+                        kindModifiers: '',
+                        spans: [ { start: { line: 5, offset: 5 }, end: { line: 15, offset: 6 } } ],
+                        childItems:
+                            [ { text: 'C',
+                                kind: 'function',
+                                kindModifiers: '',
+                                spans:
+                                [ { start: { line: 10, offset: 9 },
+                                    end: { line: 14, offset: 10 } } ] } ] } ] },
+                    { text: 'D',
+                    kind: 'function',
+                    kindModifiers: '',
+                    spans: [ { start: { line: 20, offset: 1 }, end: { line: 26, offset: 2 } } ],
+                    childItems:
+                    [ { text: 'E',
+                        kind: 'function',
+                        kindModifiers: '',
+                        spans: [ { start: { line: 22, offset: 5 }, end: { line: 24, offset: 6 } } ] } ] } ] } }
+
+        wrapper.open("examples/ex7_deepNesting.ts")
+            .then(() => wrapper.navtree("examples/ex7_deepNesting.ts"))
+            .then(response => {
+                expect(JSON.parse(response as string)).to.deep.equal(correctResponse);
+                done();
+            })
+            .catch(done);
+    });
+    
 })
