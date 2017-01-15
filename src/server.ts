@@ -40,19 +40,16 @@ import * as jsonUtil from './util/jsonUtil';
 
 // Server creation
 let server = express();
-let tssServer = new tss.Tsserver();
+let tssServer = new tss.TsserverWrapper();
 
 // Check globals
 global.tsconfigRootDir = global.tsconfigRootDir || (() => {throw new Error('tsconfigRootDir not set')})();
 
 // Loads the project into tsserver.
 setTimeout(() => {
-    tssServer.open(global.rootFile, (err, res) => {
-        if (err) {
-            throw err;
-        }
-        winston.log('trace', `Opened file:`, global.rootFile);
-    })
+    tssServer.open(global.rootFile)
+        .then(() => { winston.log('trace', `Opened file:`, global.rootFile); })
+        .catch(err => { throw err });
 }, 1);
 
 // This sets up a virtual path from '/' to the static directory. Adapted from
@@ -76,11 +73,13 @@ server.get('/api/init', (req : express.Request, res : express.Response) => {
     winston.log('trace', `Responding to /api/init`, global.rootFile);
 
     res.setHeader('Content-Type', 'application/json');
-    return res.status(200).send(jsonUtil.stringifyEscape(global.rootFile));
+    return res.status(200).send(global.rootFile);
 });
 
 /**
  * Loads in plain text of the file.
+ * 
+ *  If there is no filePath sent then it opens the initiated file.
  */
 server.get('/api/getFileText', (req : express.Request, res : express.Response) => {
     winston.log('data', `Query for getFileText from url: ${req.url}`);
@@ -91,21 +90,16 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
     if (req.query.hasOwnProperty('filePath')) {
         filePath = req.query["filePath"]
     } else {
-        return res.status(400)
-                  .send('Malformed client info');
+        filePath = global.rootFile;
     }
 
     // Initiate tssServer open callback.
-    tssServer.open(filePath, err => {
-        if (err) {
-            winston.log('error', `open method failed`, err);
-            return res.status(500).send('Server failed to open file.');
-        }
-    });
+    tssServer.open(filePath)
+        .then( response => { winston.log('trace', 'promise fulfilled:', JSON.parse(response as string))})
+        .catch(err => { throw err });
 
     // Grab file text
-    fs
-        .readFile(filePath, 'utf8', function (err, data) {
+    fs.readFile(filePath, 'utf8', function (err, data) {
             if (err) {
                 winston.log('error', `getFileText failed with ${err}`);
                 return res.status(500)
@@ -118,7 +112,7 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
             }
 
             return res.status(200)
-                      .send(jsonUtil.stringifyEscape(fileTextResponse));
+                      .send(JSON.stringify(fileTextResponse));
         });
 
 });
