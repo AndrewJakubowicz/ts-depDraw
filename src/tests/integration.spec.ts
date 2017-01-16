@@ -325,3 +325,65 @@ describe('Stablity tests', function() {
         }); 
     });
 });
+
+describe("Flawed Cases", function () {
+    this.timeout(6000);
+    let serverProcess : child_process.ChildProcess;
+
+    beforeEach(function (done) {
+        serverProcess = child_process.spawn('npm', ['start', 'examples/ex3.ts']);
+
+        serverProcess
+            .stdout
+            .on('data', function (data) {
+                winston.log('trace', `Integration Test stdout: ${data}.`);
+                // Calls the done callback as soon as server has started. (Reads the freaking
+                // stdout of the process)
+                if (data.toString().indexOf('Server started and listening') !== -1) {
+                    done()
+                }
+            });
+
+        serverProcess.on('close', function () {
+            winston.log('trace', `Closed server process`);
+        });
+
+    });
+
+    afterEach(function (done) {
+        serverProcess.kill();
+        done();
+    });
+
+
+    it.only("defininitions", function(done){
+        let correctResponse = [
+                { kind: 'local function',
+                    kindModifiers: '',
+                    start: { line: 5, offset: 14 },
+                    end: { line: 5, offset: 15 },
+                    displayString: '(local function) B(): void',
+                    documentation: '' },
+                { kind: 'function',
+                    kindModifiers: '',
+                    start: { line: 7, offset: 9 },
+                    end: { line: 7, offset: 10 },
+                    displayString: 'function D(): void',
+                    documentation: '' },
+                { kind: 'local function',
+                    kindModifiers: '',
+                    start: { line: 10, offset: 18 },
+                    end: { line: 10, offset: 19 },
+                    displayString: '(local function) C(): void',
+                    documentation: '' } ]
+        
+    http.get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex7_deepNesting.ts&line=3&offset=10`, function (res) {
+        return Promise.resolve().then(() => {
+            res.on('data', (data) => {
+                expect(JSON.parse(data.toString())).to.deep.equal(correctResponse);
+                done()
+                })
+            }).catch(done);
+        });  
+    });
+});

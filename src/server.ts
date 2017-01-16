@@ -215,6 +215,8 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         });
         return Promise.all(quickInfoList);
     }).then(args => {
+        return args.map(v => v.body);
+    }).then(args => {
         res.setHeader('Content-Type', 'application/json');
         // Remove the first token, as it *most likely* the definition token.
         return res.status(200).send(JSON.stringify(args.slice(1)));
