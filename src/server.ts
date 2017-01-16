@@ -7,15 +7,9 @@
  *
  * API:
  *
- *
- * /api/init
- *  - returns the root file for the project.
- *
  * /api/getFileText
  *  - returns plain text of the file.
- *
- * /api/getTextIdentifierTokensLocations
- *  - returns token data. Can be used to recreate the display.
+ *  - default: returns text from initiated file.
  *
  * 
  * /api/getTokenType (filePath, line, offset)
@@ -25,8 +19,10 @@
  * /api/getTokenDependencies (filePath, line, offset)
  *  - returns the dependencies.
  * 
+ * 
  * /api/getTokenDependents (filePath, line, offset)
  *  - returns the dependents.
+ * 
  */
 
 import * as http from 'http';
@@ -38,21 +34,25 @@ import * as winston from "./appLogger";
 import * as tss from "./tsserverWrap";
 import * as jsonUtil from './util/jsonUtil';
 
+
+
 // Server creation
 let server = express();
-let tssServer = new tss.Tsserver();
+let tssServer = new tss.TsserverWrapper();
 
 // Check globals
 global.tsconfigRootDir = global.tsconfigRootDir || (() => {throw new Error('tsconfigRootDir not set')})();
+global.rootFile = global.rootFile || (() => {throw new Error('rootFile not set')})();
+
+
+// languageHost.getEncodedSemanticClassifications()
+
 
 // Loads the project into tsserver.
 setTimeout(() => {
-    tssServer.open(global.rootFile, (err, res) => {
-        if (err) {
-            throw err;
-        }
-        winston.log('trace', `Opened file:`, global.rootFile);
-    })
+    tssServer.open(global.rootFile)
+        .then(() => { winston.log('trace', `Opened file:`, global.rootFile); })
+        .catch(err => { throw err });
 }, 1);
 
 // This sets up a virtual path from '/' to the static directory. Adapted from
@@ -69,18 +69,11 @@ server.use(function(req, res, next) {
   next();
 });
 
-/**
- * This can be called to get the first file that the user initiated the server on.
- */
-server.get('/api/init', (req : express.Request, res : express.Response) => {
-    winston.log('trace', `Responding to /api/init`, global.rootFile);
-
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(200).send(jsonUtil.stringifyEscape(global.rootFile));
-});
 
 /**
  * Loads in plain text of the file.
+ * 
+ *  If there is no filePath sent then it opens the initiated file.
  */
 server.get('/api/getFileText', (req : express.Request, res : express.Response) => {
     winston.log('data', `Query for getFileText from url: ${req.url}`);
@@ -91,21 +84,16 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
     if (req.query.hasOwnProperty('filePath')) {
         filePath = req.query["filePath"]
     } else {
-        return res.status(400)
-                  .send('Malformed client info');
+        filePath = global.rootFile;
     }
 
     // Initiate tssServer open callback.
-    tssServer.open(filePath, err => {
-        if (err) {
-            winston.log('error', `open method failed`, err);
-            return res.status(500).send('Server failed to open file.');
-        }
-    });
+    tssServer.open(filePath)
+        .then( response => { winston.log('trace', 'promise fulfilled:', response)})
+        .catch(err => { throw err });
 
     // Grab file text
-    fs
-        .readFile(filePath, 'utf8', function (err, data) {
+    fs.readFile(filePath, 'utf8', function (err, data) {
             if (err) {
                 winston.log('error', `getFileText failed with ${err}`);
                 return res.status(500)
@@ -118,35 +106,11 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
             }
 
             return res.status(200)
-                      .send(jsonUtil.stringifyEscape(fileTextResponse));
+                      .send(JSON.stringify(fileTextResponse));
         });
 
 });
 
-/**
- * getTextIdentifierTokensLocations returns the text in a specific file, with token information.
- *
- * @return token Array<{ text: string, type: string, start: {line: number, offset: number} } }>
- */
-server.get('/api/getTextIdentifierTokensLocations', (req : express.Request, res : express.Response) => {
-    winston.log('info', `Query for getTextIdentifierTokensLocations:`, req.query);
-
-    if (req.query.hasOwnProperty('filePath')) {
-        tss
-            .scanFileForIdentifierTokens(req.query["filePath"])
-            .then(tokenList => {
-                res.setHeader('Content-Type', 'application/json');
-                return res.status(200).send(jsonUtil.stringifyEscape(tokenList));
-            })
-            .catch(err => {
-                winston.log('error', `getTextIdentifierTokensLocations failed with ${err}`);
-                return res.status(500).send('Unable to text IdentifierTokensLocations!');
-            });
-    } else {
-        winston.log('error', `no filePath given in request`, req);
-        return res.status(400).send('Malformed client input.');
-    }
-});
 
 /**
  * getTokenType returns the type of a specific token.
@@ -164,22 +128,18 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
     
-    tssServer.open(filePath, err => {
-        if (err) {
-            winston.log('error', `Couldn't open file`, err);
-            return res.status(500).send('Internal error');
-        }
-    });
+    tssServer.open(filePath)
+        .then( _ => { winston.log('trace', `opened ${filePath}`)});
 
-    tssServer.quickinfo(filePath, line, offset, (err, response, request) => {
-        winston.log('trace', `Response of type`, response);
-        if (!JSON.parse(response).success){
-            res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
-            return
-        }
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(200).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
-    });
+    tssServer.quickinfo(filePath, line, offset)
+        .then(response => {
+            winston.log('trace', `Response of type`, response);
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(200).send(JSON.stringify(response));
+        })
+        .catch(err => {
+            winston.log('error', 'error in quickinfo in server', err);
+        });
 });
 
 
@@ -209,33 +169,25 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
 
-    tssServer.open(filePath, err => {
-        if (err) {
+    tssServer.open(filePath)
+        .catch(err => {
             winston.log('error', `Couldn't open file`, err);
             return res.status(500).send('Internal error');
-        }
-    });
+        });
 
     let definitionToken;
     let definitionFilePath: string;
-    let definitionLocation = new Promise((resolve, reject) => {
-        tssServer.definition(filePath, line, offset, (err, response) => {
-            if (err) {
-                reject(err);
-            }
-            resolve(response);
-        });
-    }).then((response: string) => {
-        if (!JSON.parse(response).success){
-            res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+
+    tssServer.definition(filePath, line, offset)
+    .then((response: string) => {
+        if (!response.success){
+            res.status(204).send(JSON.stringify(response));
             throw new Error('success false');
         }
-        return jsonUtil.parseEscaped(response)
+        return response;
     }, errFunc)
     .then(resp => {
-        if (!resp.success){
-            throw new Error(`Cannot find definition: '${resp}'`);
-        }
+
         definitionToken = resp;
         definitionFilePath = resp.body[0].file
 
@@ -254,26 +206,18 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
     })
     .then(selectTokens => {
         // This is where we filter by token type.
-        return selectTokens.filter(token => {
-            return (token.type === 'Identifier' && (!(token.start.line === line && token.start.character === offset))) ;
-        });
+        return selectTokens.filter( token => token.type === 'Identifier' );
     }).then(selectedTokens => {
         // Here we are adding metadata.
         let quickInfoList = [];
         (selectedTokens as any[]).forEach(token => {
-            quickInfoList.push(new Promise((resolve, reject) => {
-                tssServer.quickinfo(definitionFilePath, token.start.line, token.start.character, (err, resp) => {
-                    if (err) {
-                        reject(err);
-                    }
-                    resolve(jsonUtil.parseEscaped(resp))
-                });
-            }));
+            quickInfoList.push(tssServer.quickinfo(definitionFilePath, token.start.line, token.start.character));
         });
         return Promise.all(quickInfoList);
     }).then(args => {
         res.setHeader('Content-Type', 'application/json');
-        return res.status(200).send(jsonUtil.stringifyEscape(args));
+        // Remove the first token, as it *most likely* the definition token.
+        return res.status(200).send(JSON.stringify(args.slice(1)));
     })
     .catch(errFunc)
 });
@@ -300,83 +244,66 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
     
-    tssServer.open(filePath, err => {
-        if (err) {
-            winston.log('error', `Couldn't open file`, err);
-            return res.status(500).send('Internal error');
-        }
-    });
+    tssServer.open(filePath)
+        .then( _ => { winston.log('trace', 'opened:', filePath)})
+        .catch(errFunc);
+
+    winston.log('trace', 'open, now references');
     
-    let findReferences = new Promise((resolve, reject) => {
-        tssServer.references(filePath, line, offset, (err, res) => {
-            winston.log('trace', `Response: `, res);
-            if (err) reject(err);
-            resolve(res);
-        });
-    })
-    .then(stringResponse => {
-        if (!JSON.parse(stringResponse as string).success){
-            res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(stringResponse as string)));
-            throw new Error('success false');
-        }
-        return jsonUtil.parseEscaped((stringResponse as string));
-    })
-    .then(referenceObject => {
-        winston.log('trace', `referenceObject: `, referenceObject);
-        let references = referenceObject.body.refs;
-        return (references as any[]).filter( refToken => !refToken.isDefinition );
-    })
-    .then(filteredList => {
-        // Here we need to collect a list of unique file paths.
-        winston.log('trace', `filtered referenceObject: `, filteredList);
-        let filePaths: Set<string> = new Set(); // Sets are iterated over in insertion order.
-        let relativePath: string;
+    tssServer.references(filePath, line, offset)
+        .then(responseObject => {
+            if (!(responseObject as any).success){
+                res.status(204).send();
+                throw new Error('references success false');
+            }
+            return responseObject
+        })
+        .then(referenceObject => {
+            winston.log('trace', `referenceObject: `, referenceObject);
+            let references = referenceObject.body.refs;
+            return (references as any[]).filter( refToken => !refToken.isDefinition );
+        })
+        .then(filteredList => {
+            // Here we need to collect a list of unique file paths.
+            winston.log('trace', `filtered referenceObject: `, filteredList);
+            let filePaths: Set<string> = new Set(); // Sets are iterated over in insertion order.
+            let relativePath: string;
 
-        (filteredList as any[]).forEach(token => {
-            relativePath = path.relative(global.tsconfigRootDir, token.file);
-            filePaths.has(relativePath) || filePaths.add(relativePath);
-        });
+            (filteredList as any[]).forEach(token => {
+                relativePath = path.relative(global.tsconfigRootDir, token.file);
+                filePaths.has(relativePath) || filePaths.add(relativePath);
+            });
 
-        let navtreePromises = [];
-        filePaths.forEach(relativeFilePath => {
-            navtreePromises.push(new Promise((resolve, reject) => {
-                tssServer.open(relativeFilePath, err => {
-                    if (err){
-                        winston.log('error', `opening file failed`, err);
-                        return reject(err)
-                    }
-                });
-                tssServer.navtree(relativeFilePath, (err, res) => {
-                    if (err) {
-                        winston.log('error', `navtree method failed`, err);
-                        return reject(err);
-                    }
-                    return resolve(jsonUtil.parseEscaped(res));
-                });
-            }));
-        });
-        // This promise is all the unique navtrees.
-        return Promise.all([...navtreePromises, filteredList]);
-    }).then(navTreeResponse => {
-        winston.log('trace', `Response to navtree:`, navTreeResponse);
-        let references = (navTreeResponse as any[]).slice(-1)[0];
-        let navTrees = navTreeResponse.slice(0, -1);
+            let navtreePromises = [];
+            filePaths.forEach(relativeFilePath => {
+                tssServer.open(relativeFilePath)
+                    .catch(errFunc)
+                
+                navtreePromises.push(tssServer.navtree(relativeFilePath))
+            });
 
-        let scopesAffectedByReference = [];
-        winston.log('trace', `reflength and navTrees length`, references.length, navTrees.length);
-        references.forEach((tokenRef, i) => {
-            winston.log('trace', `Dispatching traverseNavTreeToken on `, navTrees[i].body, `and token reference`, tokenRef);
-            let _tempDependents = traverseNavTreeToken(navTrees[i].body, tokenRef);
-            winston.log('trace', '_tempDependents:', _tempDependents, 'for token:', tokenRef);
-            scopesAffectedByReference.push(..._tempDependents);
-        });
-        winston.log('trace', `scopesAffectedByReference after forEach:`, scopesAffectedByReference)
-        return scopesAffectedByReference
-    }).then(scopesAffected => {
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(200).send(jsonUtil.stringifyEscape(scopesAffected));
-    })
-    .catch(errFunc);
+            // This promise is all the unique navtrees.
+            return Promise.all([...navtreePromises, filteredList]);
+        }).then(navTreeResponse => {
+            winston.log('trace', `Response to navtree:`, navTreeResponse);
+            let references = (navTreeResponse as any[]).slice(-1)[0];
+            let navTrees = navTreeResponse.slice(0, -1);
+
+            let scopesAffectedByReference = [];
+            winston.log('trace', `reflength and navTrees length`, references.length, navTrees.length);
+            references.forEach((tokenRef, i) => {
+                winston.log('trace', `Dispatching traverseNavTreeToken on `, navTrees[i].body, `and token reference`, tokenRef);
+                let _tempDependents = traverseNavTreeToken(navTrees[i].body, tokenRef);
+                winston.log('trace', '_tempDependents:', _tempDependents, 'for token:', tokenRef);
+                scopesAffectedByReference.push(..._tempDependents);
+            });
+            winston.log('trace', `scopesAffectedByReference after forEach:`, scopesAffectedByReference)
+            return scopesAffectedByReference
+        }).then(scopesAffected => {
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(200).send(JSON.stringify(scopesAffected));
+        })
+        .catch(errFunc);
 });
 
 /**

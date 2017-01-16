@@ -3,16 +3,22 @@
  *
  * This module exposes some of the funcitonality of the tsserver.
  */
+
+// Reference the protocol.d.ts used by tsserver
+/// <reference path="../node_modules/typescript/lib/protocol.d.ts" />
+
 import * as path from "path";
-import * as readline from "readline";
 import * as fs from "fs";
-import * as assert from "assert";
 import * as ts from "TypeScript";
+import * as assert from 'assert';
 
 import * as child_process from "child_process";
 
 import * as winston from "./appLogger";
-import * as jsonUtil from './util/jsonUtil';
+
+import {TransformSplitResponseStream, WriteStream} from "./util/customStreams";
+
+
 
 
 /**
@@ -23,167 +29,165 @@ let FILE_TOKENS_ARRAY: Map<string,any> = new Map();
 /** What files has tsserver opened */
 let OPENED_FILES: Map<string,boolean> = new Map();
 
-/**
- * methods fileScanner accepts
- */
-enum CommandMethodsFileScan {
-    Definition,
-    References
+
+
+// Function that sends a command object and returns a promise.
+// Mutates a callbackStore.
+const sendCommand = (command, callbackStore, childProcess) => {
+    winston.log('trace', 'sendingCommand:', command);
+    return new Promise((fulfill, reject) => {
+            callbackStore.push((err, response) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                let responseObj;
+                winston.log('trace', 'parsing response:', response);
+
+                try {
+                    responseObj = JSON.parse(response);
+                }
+                catch (err) {
+                    winston.log('error', 'Parse of response failed:', response);
+                    return reject(err)
+                }
+
+                return fulfill(responseObj)
+            });
+            
+            childProcess.stdin.write(JSON.stringify(command) + '\n');
+
+        });
 }
 
-/**
- * Request body interface
- *
- * The idea of this interface is to retain information about the token that the definition is called on.
- */
-interface RequestBody {
-    tokenText : string;
-    tokenType : string;
-    filePath : string;
-}
-
-// Basic command used by Open.
-interface SimpleCommand {
-    seq : number
-    type : string
-    command : string
-    arguments : {
-        file: string
-    }
-}
-
-// Basic command used by define, reference
-interface LookupCommand extends SimpleCommand {
-    arguments : {
-        file: string
-        line: number
-        offset: number
-    }
-}
 
 /**
- * Wrapper for tsserver.
- *
- *          - TODO: Make sure seq and req_seq are always the same.
+ * TsserverWrapper spins up a tsserver process and interacts using
+ * the protocol.d.ts protocol. Each method defined returns a promise
+ * returning an object.
  */
-export class Tsserver {
-    private proc : child_process.ChildProcess;
-    private operations : [
-        ((err : Error, response : string | Buffer, request : string) => void),
-        string
-    ][] = [];
-    private seq : number = 0; // tsserver requires everything to have a sequence number.
+export class TsserverWrapper {
 
-    /**
-     * Spawns tsserver singleton and awaits events.
-     */
+    private tsserverProcess: child_process.ChildProcess;
+
+    // Required to be sent into the tsserver.
+    // Increments with each new command.
+    private seq: number = 0;
+
+    // Stores the promises.
+    private responseCallbackStore = [];
+
     constructor() {
 
-        this.proc = child_process.exec('tsserver');
+        const args = [
+            "node_modules/typescript/bin/tsserver"
+        ];
 
-        /**
-         * This has to be able to handle batch responses.
-         * Therefore it splits up the response and then process them individually.
-         */
-        this
-            .proc
-            .stdout
-            .on("data", d => {
-                winston.log('debug', `TSSERVER OUT: "${d}"`);
-
-                // Split and filter out the stuff that isn't needed.
-                let allData = d
-                    .toString()
-                    .split(/\r\n|\n/)
-                    .filter(v => {
-                        console.log(v);
-                        return !(v === '' || v.slice(0, 14) === 'Content-Length')
-                    });
-
-                // Grab first callback and data.
-                let callback,requestText,chunk;
+        this.tsserverProcess = child_process.spawn("node", args);
 
 
-                while (allData.length > 0) {
-                    winston.log("debug", `Tsserver response: Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`);
-                    if (allData.length !== this.operations.length) {
-                        winston.debug(`Tsserver response: Checking lengths of operations vs callbacks: (${allData.length} == ${this.operations.length})`, allData, this.operations);
-                    }
-                    
-                    [callback, requestText] = this
-                        .operations
-                        .shift();
-                    chunk = allData.shift();
+        let splitStream = new TransformSplitResponseStream();
+        let writingStream = new WriteStream(this.responseCallbackStore);
+        
 
-                    winston.log('trace', `Chunk response and request`, chunk, requestText);
+        // Piping output from tsserver.
+        this.tsserverProcess.stdout.pipe(splitStream).pipe(writingStream);
 
-                    // Added middleware to catch open call.
-                    // TODO: work on this.
-                    // winston.log('error', `What is this`, requestText, typeof requestText);
-                    // winston.log('error', `What is this`, jsonUtil.parseEscaped(requestText));
-                    // let command = jsonUtil.parseEscaped(requestText)
-                    // if (command.success && command.command === 'open' && !OPENED_FILES.has(command.arguments.file)){
-                    //     winston.log('warn', `Successful open of file:`, command.arguments.file);
-                    //     OPENED_FILES.set(command.arguments.file, true);
-                    // }
+        this.tsserverProcess.stderr.on('data', d => {
+            winston.log('error', 'tsserverProcess error:', d);
+        });
+    }
 
-                    callback(null, chunk, requestText);
-                }
-            });
+    open(filePath: string) {
 
-        /**
-         * Not actually sure if this will ever call.
-         * I think tsserver responds with success: false in the case of error.
-         */
-        this
-            .proc
-            .stderr
-            .on("data", d => {
-                winston.log("error", `TSSERVER ERR: ${d}`);
-                let [callback,
-                    command] = this
-                    .operations
-                    .shift();
-                callback(new Error(d.toString()), null, command);
-            });
+        // Todo: revisit the scriptKindName property.
+        let commandObj: protocol.OpenRequest = {
+            command: "open",
+            seq: this.seq,
+            type: "request",
+            arguments: (<protocol.OpenRequestArgs>{
+                // scriptKindName: "JS",
+                file: filePath
+            })
+        }
 
-        this
-            .proc
-            .on('close', (err, code) => {
-                winston.log("debug", `TSSERVER QUIT: ${code}`);
-            });
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
+    }
+
+    quickinfo(filePath: string, lineNumber: number, offset: number) {
+        let commandObj = {
+            seq: this.seq,
+            type: "request",
+            command: "quickinfo",
+            arguments: {
+                file: filePath,
+                line: lineNumber,
+                offset: offset
+            }
+        }
+
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
+    }
+
+    definition(filePath: string, lineNumber: number, offset: number) {
+        let commandObj = {
+            seq: this.seq,
+            type: "request",
+            command: "definition",
+            arguments: {
+                file: filePath,
+                line: lineNumber,
+                offset: offset
+            }
+        }
+
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
+    }
+
+    references(filePath: string, lineNumber: number, offset: number) {
+        let commandObj = {
+            seq: this.seq,
+            type: "request",
+            command: "references",
+            arguments: {
+                file: filePath,
+                line: lineNumber,
+                offset: offset
+            }
+        }
+
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
     }
 
     /**
-     * Implements allows use of implements.
+     * Implementation returns the scope of the definition of the token.
+     * 
+     * returns object with property:
+     *      body:[{"file":"",
+     *             "start":{"line":7,"offset":1},
+     *             "end":{"line":9,"offset":2}}]
      */
-    implements(filePath : string, line : number, column : number, callback : (err : Error, response : string, request : string) => void) {
-        let commandObj : LookupCommand = {
+    implementation(filePath: string, lineNumber: number, offset: number) {
+        let commandObj = {
             seq: this.seq,
             type: "request",
             command: "implementation",
             arguments: {
-                file: path.join(filePath),
-                line: line,
-                offset: column
+                file: filePath,
+                line: lineNumber,
+                offset: offset
             }
         }
-        let command = JSON.stringify(commandObj);
-        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
-        this
-            .proc
-            .stdin
-            .write(command + '\n');
-        this
-            .operations
-            .push([callback, command]);
-        this.seq++;
+
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
     }
 
-    /**
-     * navtree allows use of navtree.
-     */
-    navtree(filePath : string, callback : (err : Error, response : string, request : string) => void) {
+    navtree(filePath: string) {
         let commandObj = {
             seq: this.seq,
             type: "request",
@@ -192,379 +196,17 @@ export class Tsserver {
                 file: path.join(filePath)
             }
         }
-        let command = JSON.stringify(commandObj);
-        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
-        this
-            .proc
-            .stdin
-            .write(command + '\n');
-        this
-            .operations
-            .push([callback, command]);
-        this.seq++;
+
+        this.seq ++;
+        return sendCommand(commandObj, this.responseCallbackStore, this.tsserverProcess);
     }
 
-    /**
-     * quickinfo implements quickinfo in tsserver protocol.
-     */
-    quickinfo(filePath : string, line : number, column : number, callback : (err : Error, response : string, request : string) => void) {
-        let commandObj : LookupCommand = {
-            seq: this.seq,
-            type: "request",
-            command: "quickinfo",
-            arguments: {
-                file: path.join(filePath),
-                line: line,
-                offset: column
-            }
-        }
-        let command = JSON.stringify(commandObj);
-        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
-        this
-            .proc
-            .stdin
-            .write(command + '\n');
-        this
-            .operations
-            .push([callback, command]);
-        this.seq++;
-    }
-
-    /**
-     * Allows goto definition using tsserver.
-     * This will store a callback on the FIFO queue.
-     * If you don't open the file before trying to find definitions in it, this will fail.
-     */
-    definition(filePath : string, line : number, column : number, callback : (err : Error, response : string, request : string) => void) {
-        let commandObj : LookupCommand = {
-            seq: this.seq,
-            type: "request",
-            command: "definition",
-            arguments: {
-                file: path.join(filePath),
-                line: line,
-                offset: column
-            }
-        }
-        let command = JSON.stringify(commandObj);
-        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
-        this
-            .proc
-            .stdin
-            .write(command + '\n');
-        this
-            .operations
-            .push([callback, command]);
-        this.seq++;
-    }
-
-    /**
-     * Returns a response showing what implements something.
-     */
-    references(filePath : string, line : number, column : number, callback : (err : Error, response : string, request : string) => void) {
-        let commandObj : LookupCommand = {
-            seq: this.seq,
-            type: "request",
-            command: "references",
-            arguments: {
-                file: path.join(filePath),
-                line: line,
-                offset: column
-            }
-        }
-        let command = JSON.stringify(commandObj);
-        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
-        this
-            .proc
-            .stdin
-            .write(command + '\n');
-        this
-            .operations
-            .push([callback, command]);
-        this.seq++;
-    }
-
-    open(filePath : string, callback : (err : Error, response : string, request : string) => void) {
-        let command = `{"seq":${this
-            .seq},"type":"request","command":"open","arguments":{"file":"${path
-            .join(filePath)}"}}\n`;
-        winston.log("data", `SENDING TO TSSERVER: "${command}"`);
-        this
-            .proc
-            .stdin
-            .write(command);
-        this
-            .operations
-            .push([callback, command]);
-        this.seq++;
-    }
-
-    kill() {
-        winston.log("trace", `TSSERVER SENDING QUIT REQUEST`);
-        this
-            .proc
-            .kill();
-    }
-
-    /**
-     * getTokenDependencies gets dependencies based on type.
-     * 
-     * Modules get module level dependencies. Functions get inner scope and module dependency.
-     */
-    getTokenDependencies(filePath: string, line: number, offset: number) {
-
-    }
-
-    /**
-     * Uses the filepath, sourceFile and position to look up a definition.
-     * Returns a promise.
-     */
-    lookUpDefinition(filePath : string, lineNum : number, tokenOffset : number, reqBody : RequestBody) {
-        return new Promise < [
-            string | Buffer,
-            string
-        ] > ((fulfill, reject) => {
-            this
-                .definition(filePath, lineNum, tokenOffset, function (err, res, req) {
-                    if (err) 
-                        reject(err);
-                    else 
-                        fulfill([
-                            mergeRequestWithBody(req, reqBody),
-                            res
-                        ]);
-                    }
-                );
-        });
-    };
-
-    /**
-     * Uses the filepath, sourceFile and position to look up a definition.
-     * Returns a promise.
-     */
-    lookUpReferences(filePath : string, lineNum : number, tokenOffset : number, reqBody : RequestBody) {
-        return new Promise < [
-            string | Buffer,
-            string
-        ] > ((fulfill, reject) => {
-            this.references(filePath, lineNum, tokenOffset, (err, res, req) => {
-                if (err) 
-                    reject(err);
-                else 
-                    fulfill([
-                        mergeRequestWithBody(req, reqBody),
-                        res
-                    ]);
-                }
-            );
-        });
-    };
-
-    /**
-     * This function does a fake promise in order to comply with the other functions.
-     * This is the function run on a non identifier token. Storing data for syntax highlighting.
-     */
-    addToken(lineNum : number, tokenOffset : number, reqBody : RequestBody) {
-        return new Promise < [
-            string | Buffer,
-            string
-        ] > ((fullfill, reject) => {
-            let req = {
-                command: "addToken",
-                body: reqBody
-            };
-
-            let res = {
-                type: "response",
-                success: true,
-                body: {
-                    start: {
-                        line: lineNum,
-                        offset: tokenOffset
-                    }
-
-                }
-            }
-            fullfill([
-                JSON.stringify(req),
-                JSON.stringify(res)
-            ]);
-
-        })
-    }
-
-    /**
-     * addEndPosition adds an end Position to defined tokens.
-     * definedStart
-     * definedEnd
-     * Assumes that the file has already been opened in tsserver.
-     */
-    addEndPosition(token : TokenIdentifierData, filePath : string) {
-        winston.log('trace', `addEndPosition method used for token:`, token);
-        if (!token.isDefinition) {
-            return Promise.resolve(token);
-        }
-        return new Promise < TokenIdentifierData > ((fulfill, reject) => {
-            this
-                .definition(filePath, token.start.line, token.start.offset, function (err, res, req) {
-                    if (err) 
-                        reject(err);
-                    else 
-                        return fulfill(JSON.parse(res));
-                    }
-                );
-        }).then(definitionResponse => {
-            winston.log('debug', `definitionResponse = `, definitionResponse)
-            token.definedEnd = definitionResponse.body[0].end;
-            token.definedStart = definitionResponse.body[0].start;
-            token.definedFile = definitionResponse.body[0].file;
-            winston.log('debug', `Modified token:`, token);
-            return token
-        }).catch(err => {
-            winston.log('error', `addEndPosition failed with ${err}`);
-        });
-    }
-
-    /**
-     * Internal use: Use scanFileForAllTokensPretty instead.
-     *
-     * This function takes a list of request/responses and cleans the data.
-     * In future optimizations it would be good not to have this bottleneck.
-     */
-    combineRequestReturn(reqRes : string[][]) {
-        winston.log('trace', `combineRequestReturn called with ${reqRes}`);
-        let combined : Promise < TokenData | TokenIdentifierData > [] = [];
-        let request,
-            response;
-        for (let i = 0; i < reqRes.length; i++) {
-            request = JSON.parse(reqRes[i][0]);
-            response = JSON.parse(reqRes[i][1])
-            if (!response.success) {
-                combined.push(compressFailedToken(request, response))
-            } else if (request.command === "addToken") {
-                combined.push(compressAddToken(request, response))
-            } else if (request.command == "references") {
-                combined.push(this.addEndPosition(compressReferencesToken(request, response), request.body.filePath));
-            } else {
-                winston.log('error', `Tokens are falling through!!!!`);
-            }
-        }
-        winston.log('trace', `combineRequestReturn called with ${reqRes}`);
-        return Promise.all(combined);
+    killServer() {
+        this.tsserverProcess.kill();
     }
 
 }
 
-/**
- * This is the point at which we can add as much as we want to the request.
- */
-function mergeRequestWithBody(req : string, body : RequestBody) : string {
-    let newReq = JSON.parse(req);
-    newReq.body = body;
-    return JSON.stringify(newReq);
-}
-
-/**
- * This is the very tiny token that is created for failed lookups.
- *
- * These are mostly comments.
- */
-function compressFailedToken(request, response) {
-    return new Promise < TokenData > ((fullfill, reject) => {
-        fullfill({tokenText: request.body.tokenText, tokenType: request.body.tokenType, start: null});
-    });
-}
-
-function compressAddToken(request, response) {
-    return new Promise < TokenData > ((fullfill, reject) => {
-        fullfill({tokenText: request.body.tokenText, tokenType: request.body.tokenType, start: response.body.start});
-    });
-}
-
-export interface Position {
-    line : number
-    offset : number
-}
-
-export interface TokenData {
-    tokenText : string
-    tokenType : string
-    start : Position
-}
-
-/**
- * This is the data stored by all tokens which can have dependencies.
- */
-export interface TokenIdentifierData extends TokenData {
-    isDefinition : boolean
-    definedEnd?: Position
-    definedStart?: Position
-    definedFile?: string
-    references : any[]
-}
-
-/**
- * Must be passed a valid javascript object.
- *  Creates token. Then removes itself from the tokens all references list.
- *  Updates its own isDefinition by looking at the all references list.
- */
-export function compressReferencesToken(request, response) {
-    assert.notEqual(typeof request, 'string', `compressReferencesToken must be passed an object`);
-    let currentFile = request.body.filePath;
-    let referenceToken = createReferenceToken(request, response);
-    referenceToken = removeDuplicateReference(referenceToken, currentFile)
-    return referenceToken
-}
-
-export function createReferenceToken(request, response) : TokenIdentifierData {
-    // If success failed then it's a comment or useless.
-    if(!response.success) {
-        winston.log('error', `
-Something has gone fatally wrong.
-Token must be successful to be passed into createReferenceToken.`.trim());
-    }
-    assert.ok(request.body.tokenText, "Token text is required in request");
-    assert.ok(request.body.tokenType, "Token type is required in request");
-    assert.ok(request.arguments.line, "Token line is required in request");
-    assert.ok(request.arguments.offset, "Token offset is required in request");
-    return {
-        tokenText: request.body.tokenText, tokenType: request.body.tokenType, isDefinition: false, // By default initialized as false. TODO: Needs to be checked from references.
-        start: {
-            line: request.arguments.line,
-            offset: request.arguments.offset
-        },
-        references: response.body.refs // Technically only need: file, start, isDefinition.
-    }
-}
-
-/**
- * removeDuplicateReference cleans up the token data.
- * Compares file paths
- */
-export function removeDuplicateReference(compressedReference : TokenIdentifierData, relFilePath : string) {
-    let thisNodeStart = compressedReference.start;
-    let referenceList = compressedReference.references;
-    let splitIndex : number;
-    for (let i = 0; i < referenceList.length; i++) {
-        if (comparePosition(referenceList[i].start, thisNodeStart) && comparePath(referenceList[i].file, relFilePath)) {
-            splitIndex = i;
-            break;
-        }
-    }
-
-    let cutoutReference = referenceList.splice(splitIndex, 1);
-    compressedReference.isDefinition = cutoutReference[0].isDefinition;
-
-    return compressedReference;
-
-    function comparePosition(a, b) {
-        return a.line === b.line && a.offset === b.offset;
-    }
-    function comparePath(absPath : string, relPath : string) : boolean {
-        winston.log('trace', `Comparing ${absPath.slice(-1 * relPath.length)} === ${relPath}`);
-        return absPath.slice(-1 * relPath.length) === relPath;
-    }
-}
 
 /**
  * Function for initialising the scanner.
