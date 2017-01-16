@@ -207,7 +207,7 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
     .then(selectTokens => {
         // This is where we filter by token type.
         return selectTokens.filter(token => {
-            return (token.type === 'Identifier' && (!(token.start.line === line && token.start.character === offset))) ;
+            return (token.type === 'Identifier' && (!(token.start.line === definitionToken.body[0].start.line && token.start.character === definitionToken.body[0].start.offset))) ;
         });
     }).then(selectedTokens => {
         // Here we are adding metadata.
@@ -218,7 +218,8 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         return Promise.all(quickInfoList);
     }).then(args => {
         res.setHeader('Content-Type', 'application/json');
-        return res.status(200).send(JSON.stringify(args));
+        // Remove the first token, as it *most likely* the definition token.
+        return res.status(200).send(JSON.stringify(args.slice(1)));
     })
     .catch(errFunc)
 });

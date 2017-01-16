@@ -87,7 +87,7 @@ describe('Server api:', function () {
             });
     });
 
-    it.only('Call /api/getTokenDependencies on server', function (done) {
+    it.only('Call /api/getTokenDependencies on server (filter out definition line)', function (done) {
         let correctResponse = [];
 
         http.get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex2.ts&line=9&offset=1`, function (res) {
