@@ -356,7 +356,7 @@ describe("Flawed Cases", function () {
     });
 
 
-    it.only("defininitions", function(done){
+    it("defininitions locally", function(done){
         let correctResponse = [
                 { kind: 'local function',
                     kindModifiers: '',
@@ -383,6 +383,48 @@ describe("Flawed Cases", function () {
     http.get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex7_deepNesting.ts&line=3&offset=10`, function (res) {
         return Promise.resolve().then(() => {
             res.on('data', (data) => {
+                expect(JSON.parse(data.toString())).to.deep.equal(correctResponse);
+                done()
+                })
+            }).catch(done);
+        });  
+    });
+
+    it("defininitions locally", function(done){
+        let correctResponse = [
+            { kind: 'parameter',
+                kindModifiers: '',
+                start: { line: 3, offset: 27 },
+                end: { line: 3, offset: 28 },
+                displayString: '(parameter) a: any',
+                documentation: '',
+                file: 'examples/ex3.ts' },
+            { kind: 'parameter',
+                kindModifiers: '',
+                start: { line: 3, offset: 30 },
+                end: { line: 3, offset: 31 },
+                displayString: '(parameter) b: any',
+                documentation: '',
+                file: 'examples/ex3.ts' },
+            { kind: 'parameter',
+                kindModifiers: '',
+                start: { line: 4, offset: 12 },
+                end: { line: 4, offset: 13 },
+                displayString: '(parameter) a: any',
+                documentation: '',
+                file: 'examples/ex3.ts' },
+            { kind: 'parameter',
+                kindModifiers: '',
+                start: { line: 4, offset: 16 },
+                end: { line: 4, offset: 17 },
+                displayString: '(parameter) b: any',
+                documentation: '',
+                file: 'examples/ex3.ts' } ]
+        
+    http.get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex4.ts&line=5&offset=22`, function (res) {
+        return Promise.resolve().then(() => {
+            res.on('data', (data) => {
+                winston.log('trace', 'shit', JSON.parse(data.toString()));
                 expect(JSON.parse(data.toString())).to.deep.equal(correctResponse);
                 done()
                 })
