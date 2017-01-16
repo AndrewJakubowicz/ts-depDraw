@@ -7,9 +7,8 @@ import * as winston from './appLogger';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// TODO: Need a good way to collect fileNames.
 // takes relative filePath from root
-export function navTreeOnFile(relFilePath: string){
+function createLanguageServiceOnFile(relFilePath: string){
     const rootPath = process.cwd();
     const filePath = path.join(process.cwd(), relFilePath);
     
@@ -46,8 +45,29 @@ export function navTreeOnFile(relFilePath: string){
     }
 
     const languageServiceHost = ts.createLanguageService(servicesHost);
-
-    return languageServiceHost.getNavigationTree(filePath);
+    return languageServiceHost;
 }
+
+/**
+ * TODO: I may reactivate this in the future for speed. These are much faster than tsserver.
+ */
+
+
+// export function navTreeOnFile(relFilePath){
+//     return createLanguageServiceOnFile(relFilePath).getNavigationTree(relFilePath);
+// }
+
+// export function semanticClassifications(relFilePath, startLineAndOffset, endLineAndOffset){
+//     const {start, length} = getLengthOfSpan(relFilePath, startLineAndOffset, endLineAndOffset);
+//     return createLanguageServiceOnFile(relFilePath).getEncodedSyntacticClassifications(relFilePath, {start, length});
+// }
+
+// export function getLengthOfSpan(relFilePath, start, end){
+//     const sourceFile = ts.createSourceFile(path.basename(relFilePath), fs.readFileSync(relFilePath).toString(), ts.ScriptTarget.Latest);
+//     winston.log('trace', 'sourceFile:', sourceFile);
+//     const startPos = ts.getPositionOfLineAndCharacter(sourceFile, start.line, start.offset);
+//     const endPos = ts.getPositionOfLineAndCharacter(sourceFile, end.line, end.offset);
+//     return {start: startPos, length: endPos - startPos};
+// }
 
 

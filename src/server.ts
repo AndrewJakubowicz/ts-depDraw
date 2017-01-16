@@ -33,9 +33,6 @@ import * as path from 'path';
 import * as winston from "./appLogger";
 import * as tss from "./tsserverWrap";
 import * as jsonUtil from './util/jsonUtil';
-import {languageServiceHost} from './languageService';
-
-const languageHost = languageServiceHost;
 
 
 
@@ -172,33 +169,25 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
 
-    tssServer.open(filePath, err => {
-        if (err) {
+    tssServer.open(filePath)
+        .catch(err => {
             winston.log('error', `Couldn't open file`, err);
             return res.status(500).send('Internal error');
-        }
-    });
+        });
 
     let definitionToken;
     let definitionFilePath: string;
-    let definitionLocation = new Promise((resolve, reject) => {
-        tssServer.definition(filePath, line, offset, (err, response) => {
-            if (err) {
-                reject(err);
-            }
-            resolve(response);
-        });
-    }).then((response: string) => {
-        if (!JSON.parse(response).success){
-            res.status(204).send(jsonUtil.stringifyEscape(jsonUtil.parseEscaped(response)));
+
+    tssServer.definition(filePath, line, offset)
+    .then((response: string) => {
+        if (!response.success){
+            res.status(204).send(JSON.stringify(response));
             throw new Error('success false');
         }
-        return jsonUtil.parseEscaped(response)
+        return response;
     }, errFunc)
     .then(resp => {
-        if (!resp.success){
-            throw new Error(`Cannot find definition: '${resp}'`);
-        }
+
         definitionToken = resp;
         definitionFilePath = resp.body[0].file
 
@@ -224,19 +213,12 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         // Here we are adding metadata.
         let quickInfoList = [];
         (selectedTokens as any[]).forEach(token => {
-            quickInfoList.push(new Promise((resolve, reject) => {
-                tssServer.quickinfo(definitionFilePath, token.start.line, token.start.character, (err, resp) => {
-                    if (err) {
-                        reject(err);
-                    }
-                    resolve(jsonUtil.parseEscaped(resp))
-                });
-            }));
+            quickInfoList.push(tssServer.quickinfo(definitionFilePath, token.start.line, token.start.character));
         });
         return Promise.all(quickInfoList);
     }).then(args => {
         res.setHeader('Content-Type', 'application/json');
-        return res.status(200).send(jsonUtil.stringifyEscape(args));
+        return res.status(200).send(JSON.stringify(args));
     })
     .catch(errFunc)
 });
