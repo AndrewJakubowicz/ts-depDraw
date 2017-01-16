@@ -215,7 +215,9 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         });
         return Promise.all(quickInfoList);
     }).then(args => {
-        return args.map(v => v.body);
+        const trimmedArgs = args.map(v => v.body);
+        trimmedArgs.forEach(v => { v['file'] = definitionFilePath });
+        return trimmedArgs;
     }).then(args => {
         res.setHeader('Content-Type', 'application/json');
         // Remove the first token, as it *most likely* the definition token.

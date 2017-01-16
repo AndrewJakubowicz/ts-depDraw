@@ -363,18 +363,21 @@ describe("Flawed Cases", function () {
                     start: { line: 5, offset: 14 },
                     end: { line: 5, offset: 15 },
                     displayString: '(local function) B(): void',
+                    "file": "examples/ex7_deepNesting.ts",
                     documentation: '' },
                 { kind: 'function',
                     kindModifiers: '',
                     start: { line: 7, offset: 9 },
                     end: { line: 7, offset: 10 },
                     displayString: 'function D(): void',
+                    "file": "examples/ex7_deepNesting.ts",
                     documentation: '' },
                 { kind: 'local function',
                     kindModifiers: '',
                     start: { line: 10, offset: 18 },
                     end: { line: 10, offset: 19 },
                     displayString: '(local function) C(): void',
+                    "file": "examples/ex7_deepNesting.ts",
                     documentation: '' } ]
         
     http.get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex7_deepNesting.ts&line=3&offset=10`, function (res) {
