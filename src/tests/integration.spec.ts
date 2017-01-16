@@ -87,21 +87,8 @@ describe('Server api:', function () {
             });
     });
 
-    it('Call /api/getTokenDependencies on server', function (done) {
-        let correctResponse = [
-            { seq: 0,
-            type: 'response',
-            command: 'quickinfo',
-            request_seq: 3,
-            success: true,
-            body:
-            { kind: 'function',
-                kindModifiers: '',
-                start: { line: 2, offset: 10 },
-                end: { line: 2, offset: 16 },
-                displayString: 'function findMe(): void',
-                documentation: '' } }
-        ]
+    it.only('Call /api/getTokenDependencies on server', function (done) {
+        let correctResponse = [];
 
         http.get(`http://localhost:8080/api/getTokenDependencies?filePath=examples/ex2.ts&line=9&offset=1`, function (res) {
             res.on('data', (data) => {
