@@ -18,6 +18,8 @@ import * as winston from "./appLogger";
 
 import {TransformSplitResponseStream, WriteStream} from "./util/customStreams";
 
+import {navTreeOnFile} from './languageService';
+
 
 
 

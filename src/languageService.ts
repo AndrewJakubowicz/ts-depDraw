@@ -53,9 +53,9 @@ function createLanguageServiceOnFile(relFilePath: string){
  */
 
 
-// export function navTreeOnFile(relFilePath){
-//     return createLanguageServiceOnFile(relFilePath).getNavigationTree(relFilePath);
-// }
+export function navTreeOnFile(relFilePath){
+    return createLanguageServiceOnFile(relFilePath).getNavigationTree(relFilePath);
+}
 
 // export function semanticClassifications(relFilePath, startLineAndOffset, endLineAndOffset){
 //     const {start, length} = getLengthOfSpan(relFilePath, startLineAndOffset, endLineAndOffset);
