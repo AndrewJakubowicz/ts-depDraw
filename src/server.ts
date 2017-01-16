@@ -206,9 +206,7 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
     })
     .then(selectTokens => {
         // This is where we filter by token type.
-        return selectTokens.filter(token => {
-            return (token.type === 'Identifier' && (!(token.start.line === definitionToken.body[0].start.line && token.start.character === definitionToken.body[0].start.offset))) ;
-        });
+        return selectTokens.filter( token => token.type === 'Identifier' );
     }).then(selectedTokens => {
         // Here we are adding metadata.
         let quickInfoList = [];
