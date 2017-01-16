@@ -16,7 +16,7 @@ import * as jsonUtil from '../util/jsonUtil';
  * keeping them 'pure'.
  */
 describe('Server api:', function () {
-    this.timeout(6000);
+    this.timeout(15000);
     let serverProcess : child_process.ChildProcess;
 
     beforeEach(function (done) {
@@ -106,25 +106,34 @@ describe('Server api:', function () {
     it('Call /api/getTokenDependents on server', function (done) {
 
         let correctResponse = [
-            { text: '"ex4"',
-                kind: 'module',
+            { kind: 'module',
                 kindModifiers: '',
-                spans: [ { start: { line: 1, offset: 1 }, end: { line: 11, offset: 2 } } ] },
-            { text: 'betterAdder',
-                kind: 'function',
+                start: { line: 1, offset: 13 },
+                end: { line: 1, offset: 20 },
+                displayString: '"ex4"',
+                documentation: '',
+                file: 'examples/ex4.ts' },
+            { kind: 'function',
                 kindModifiers: 'export',
-                spans: [ { start: { line: 4, offset: 1 }, end: { line: 6, offset: 2 } } ] },
-            { text: '"ex3"',
-                kind: 'module',
+                start: { line: 4, offset: 17 },
+                end: { line: 4, offset: 28 },
+                displayString: 'function betterAdder(c: any, d: any): any',
+                documentation: '',
+                file: 'examples/ex4.ts' },
+            { kind: 'module',
                 kindModifiers: '',
-                spans: [ { start: { line: 1, offset: 1 }, end: { line: 10, offset: 2 } } ] } ]
+                start: { line: 1, offset: 13 },
+                end: { line: 1, offset: 16 },
+                displayString: '"ex3"',
+                documentation: '',
+                file: 'examples/ex3.ts' } ]
 
         http.get(`http://localhost:8080/api/getTokenDependents?filePath=examples/ex3.ts&line=7&offset=22`, function (res) {
                 res.on('data', (data) => {
                     return Promise
                         .resolve()
                         .then(() => {
-                            expect(JSON.parse(data))
+                            expect(JSON.parse(data.toString()))
                                 .to
                                 .deep
                                 .equal(correctResponse);

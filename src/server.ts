@@ -234,7 +234,7 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
     winston.log('info', `Query for getTokenDependents:`, req.query);
 
     let errFunc = (err) => {
-        winston.log('error', `Error occurred in getTokenDependents`, err);
+        winston.log('trace', `Error occurred in getTokenDependents`, err);
         if (!res.finished){
             return res.status(500).send('Internal Server Error');
         }
@@ -303,7 +303,35 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
             });
             winston.log('trace', `scopesAffectedByReference after forEach:`, scopesAffectedByReference)
             return scopesAffectedByReference
-        }).then(scopesAffected => {
+        }).then(scopesAffectedByReference => {
+
+            // Find the reference identifier.
+            const newTokens = (scopesAffectedByReference as any).map(token => {
+                // Huge overhead here, find first identifier token of the scope given.
+                // We need to add exceptions (like modules, and maybe more?...)
+                return tss.scanFileForIdentifierTokens(token.file)
+                    .then(allFileTokens => {
+                        const filteredTokens = extractTokensFromFile(allFileTokens, token.spans.start, token.spans.end)
+                        for (let _token of filteredTokens){
+                            if (_token.type === 'Identifier') {
+                                return tssServer.quickinfo(token.file, _token.start.line, _token.start.character)
+                                    .then(quickInfoResponse => {
+                                        let responseObj = quickInfoResponse.body;
+                                        responseObj.file = token.file;
+                                        switch (token.kind){
+                                            case 'module':
+                                                responseObj.kind = token.kind;
+                                                responseObj.displayString = token.text;
+                                        }
+                                        return responseObj
+                                    });
+                            }
+                        }
+                    })
+            })
+            return Promise.all(newTokens);
+        })
+        .then(scopesAffected => {
             res.setHeader('Content-Type', 'application/json');
             return res.status(200).send(JSON.stringify(scopesAffected));
         })
@@ -357,7 +385,14 @@ function traverseNavTreeToken(navTreeToken, refToken, results = []): any[]{
     let leafToken = {text: navTreeToken.text,
                     kind: navTreeToken.kind,
                     kindModifiers: navTreeToken.kindModifiers,
-                    spans: navTreeToken.spans}
+                    spans: navTreeToken.spans,
+                    file: path.relative(global.tsconfigRootDir ,refToken.file)
+                }
+
+    if (leafToken.spans.length !== 1){
+        winston.log('warn', 'Spans is not == 1, Info lost!', leafToken);
+    }
+    leafToken.spans = leafToken.spans[0];
     winston.log('trace', `Created childItemScope: `, leafToken, results);
     if (!navTreeToken.childItems){
         return [leafToken];
