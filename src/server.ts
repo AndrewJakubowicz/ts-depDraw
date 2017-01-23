@@ -216,7 +216,7 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
         return Promise.all(quickInfoList);
     }).then(args => {
         const trimmedArgs = args.map(v => v.body);
-        trimmedArgs.forEach(v => { v['file'] = definitionFilePath });
+        trimmedArgs.forEach(v => { v['file'] =  path.relative(global.tsconfigRootDir, definitionFilePath) });
         return trimmedArgs;
     }).then(args => {
         res.setHeader('Content-Type', 'application/json');
