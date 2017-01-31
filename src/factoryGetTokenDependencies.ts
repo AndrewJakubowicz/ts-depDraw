@@ -1,3 +1,11 @@
+/**
+ * 
+ * Finds definition of token, and then filters the tokens from the definition filePath
+ * to only include the tokens which are Indentifiers and within the start and end range.
+ * 
+ * QuickInfo is then called on the dependencies found to get their info and an array is sent.
+ * 
+ */
 const factoryGetTokenDependencies = ({tssServer, winston, relative_path, scanFileForIdentifierTokens, extractTokensFromFile}) =>
                                     (filePath, line, offset) =>
     new Promise((resolve, reject) => {
