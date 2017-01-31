@@ -36,6 +36,8 @@ import * as jsonUtil from './util/jsonUtil';
 
 
 
+
+
 // Server creation
 let server = express();
 let tssServer = new tss.TsserverWrapper();
@@ -46,6 +48,19 @@ global.rootFile = global.rootFile || (() => {throw new Error('rootFile not set')
 
 
 // languageHost.getEncodedSemanticClassifications()
+
+
+
+/**
+ * Set up api endpoints
+ */
+import factoryGetFileText from './factoryGetFileText';
+const getFileText = factoryGetFileText({tssServer, winston});
+
+
+
+
+
 
 
 // Loads the project into tsserver.
@@ -87,27 +102,9 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
         filePath = global.rootFile;
     }
 
-    // Initiate tssServer open callback.
-    tssServer.open(filePath)
-        .then( response => { winston.log('trace', 'promise fulfilled:', response)})
-        .catch(err => { throw err });
-
-    // Grab file text
-    fs.readFile(filePath, 'utf8', function (err, data) {
-            if (err) {
-                winston.log('error', `getFileText failed with ${err}`);
-                return res.status(500)
-                          .send('Unable to get root file text!');
-            }
-
-            let fileTextResponse = {
-                file: filePath,
-                text: data
-            }
-
-            return res.status(200)
-                      .send(JSON.stringify(fileTextResponse));
-        });
+    getFileText(filePath)
+        .then(res.status(200).send)
+        .catch(res.status(500).send)
 
 });
 
