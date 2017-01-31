@@ -41,6 +41,8 @@ const extractTokensFromFile = factoryExtractTokensFromFile({winston});
 
 
 
+
+
 // Server creation
 let server = express();
 let tssServer = new tss.TsserverWrapper();
@@ -61,6 +63,7 @@ import factoryGetFileText from './factoryGetFileText';
 import factoryGetTokenType from './factoryGetTokenType';
 import factoryGetTokenDependencies from './factoryGetTokenDependencies';
 import factoryGetTokenDependents from './factoryGetTokenDependents';
+
 const getFileText = factoryGetFileText({tssServer, winston, readFile: fs.readFile});
 const getTokenType = factoryGetTokenType({
     tssServer,
@@ -72,6 +75,7 @@ const getTokenDependencies = factoryGetTokenDependencies({
     scanFileForIdentifierTokens: tss.scanFileForIdentifierTokens,
     extractTokensFromFile
 });
+
 const getTokenDependents = factoryGetTokenDependents({
     tssServer,
     winston,
@@ -79,6 +83,7 @@ const getTokenDependents = factoryGetTokenDependents({
     scanFileForIdentifierTokens: tss.scanFileForIdentifierTokens,
     extractTokensFromFile
 })
+
 
 
 
