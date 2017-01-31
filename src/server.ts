@@ -55,7 +55,13 @@ global.rootFile = global.rootFile || (() => {throw new Error('rootFile not set')
  * Set up api endpoints
  */
 import factoryGetFileText from './factoryGetFileText';
+import factoryGetTokenType from './factoryGetTokenType';
 const getFileText = factoryGetFileText({tssServer, winston, readFile: fs.readFile});
+const getTokenType = factoryGetTokenType({
+    open: tssServer.open,
+    quickinfo: tssServer.quickinfo,
+    winston
+});
 
 
 
@@ -101,9 +107,12 @@ server.get('/api/getFileText', (req : express.Request, res : express.Response) =
     } else {
         filePath = global.rootFile;
     }
-
+    
     getFileText(filePath)
-        .then(res.status(200).send)
+        .then(stringResponse => {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).send(stringResponse)
+        })
         .catch(res.status(500).send)
 
 });
@@ -125,18 +134,12 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
     
-    tssServer.open(filePath)
-        .then( _ => { winston.log('trace', `opened ${filePath}`)});
-
-    tssServer.quickinfo(filePath, line, offset)
-        .then(response => {
-            winston.log('trace', `Response of type`, response);
+    getTokenType(filePath, line, offset)
+        .then(stringResponse => {
             res.setHeader('Content-Type', 'application/json');
-            return res.status(200).send(JSON.stringify(response));
+            res.status(200).send(stringResponse)
         })
-        .catch(err => {
-            winston.log('error', 'error in quickinfo in server', err);
-        });
+        .catch(res.status(500).send)
 });
 
 

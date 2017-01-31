@@ -15,7 +15,7 @@ import * as jsonUtil from '../util/jsonUtil';
  * These tests open and close the program every time,
  * keeping them 'pure'.
  */
-describe.only('Server api:', function () {
+describe('Server api:', function () {
     this.timeout(15000);
     let serverProcess : child_process.ChildProcess;
 
