@@ -17,7 +17,11 @@ import factoryGetFileText from '../factoryGetFileText';
 describe.only("Core features", function(){
 
     describe("getFileText", function(){
+        /**
+         * TODO: complete test
+         */
         it("getFileText", function(done){
+            const correctResponse = JSON.parse('{"file":"examples/ex3.ts","text":"import * as ex5 from \\"./ex5\\";\\n\\nexport function adderTest(a, b){\\n    return a + b;\\n}\\n\\nex5.betterConsoleLog(adderTest(1, 2));\\n\\n\\n\\n"}');
             const getFileText = factoryGetFileText({
                 tssServer: {
                     open: () => Promise.resolve()
@@ -27,7 +31,8 @@ describe.only("Core features", function(){
             });
 
             getFileText(global.rootFile)
-                .then(strResponse => expect((strResponse as string).replace(/(\\r\\n|\\r|\\n)/g, '\\n')).to.be.a("number"))
+                .then(strResponse => expect(JSON.parse((strResponse as string).replace(/(\\r\\n|\\r|\\n)/g, '\\n')))
+                    .to.deep.equal(correctResponse))
                 .then(_ => done())
                 .catch(done);
         })
