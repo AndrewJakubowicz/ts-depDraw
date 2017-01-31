@@ -15,7 +15,7 @@ import * as jsonUtil from '../util/jsonUtil';
  * These tests open and close the program every time,
  * keeping them 'pure'.
  */
-describe('Server api:', function () {
+describe.only('Server api:', function () {
     this.timeout(15000);
     let serverProcess : child_process.ChildProcess;
 
@@ -44,7 +44,7 @@ describe('Server api:', function () {
     });
 
     afterEach(function (done) {
-        serverProcess.kill();
+        serverProcess.kill('SIGINT');
         /^win/.test(process.platform) ?
             (() => setTimeout(done, 3000))()
             : (() => setTimeout(done, 3000))()
@@ -59,7 +59,7 @@ describe('Server api:', function () {
                     return Promise
                         .resolve()
                         .then(() => {
-                            expect(JSON.parse(data.toString().replace(/(\r\n|\r|\n)/, '\n')))
+                            expect(JSON.parse(data.toString().replace(/(\\r\\n|\\r|\\n)/g, '\\n')))
                                 .to
                                 .deep
                                 .equal(jsonUtil.parseEscaped('{"file":"examples%2Fex2.ts","text":"%0Afunction%20findMe()%7B%0A%20%20%20%20return%0A%7D%0A%0Aimport%20*%20as%20example1%20from%20%22.%2Fex1%22%3B%0A%0A%0AfindMe()%3B"}'.replace(/(\r\n|\r|\n)/, '\n')));
