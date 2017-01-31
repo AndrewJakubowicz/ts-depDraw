@@ -55,7 +55,7 @@ global.rootFile = global.rootFile || (() => {throw new Error('rootFile not set')
  * Set up api endpoints
  */
 import factoryGetFileText from './factoryGetFileText';
-const getFileText = factoryGetFileText({tssServer, winston});
+const getFileText = factoryGetFileText({tssServer, winston, readFile: fs.readFile});
 
 
 
