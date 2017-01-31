@@ -20,7 +20,7 @@ describe('Server api:', function () {
     let serverProcess : child_process.ChildProcess;
 
     beforeEach(function (done) {
-        serverProcess = child_process.spawn('npm', ['start', 'examples/ex2.ts']);
+        serverProcess = child_process.spawn(/^win/.test(process.platform) ? 'npm.cmd' : 'npm', ['start', 'examples/ex2.ts']);
 
         serverProcess
             .stdout
@@ -45,7 +45,9 @@ describe('Server api:', function () {
 
     afterEach(function (done) {
         serverProcess.kill();
-        done();
+        /^win/.test(process.platform) ?
+            (() => setTimeout(done, 3000))()
+            : (() => setTimeout(done, 3000))()
     });
 
 
@@ -57,10 +59,10 @@ describe('Server api:', function () {
                     return Promise
                         .resolve()
                         .then(() => {
-                            expect(jsonUtil.parseEscaped(data.toString()))
+                            expect(JSON.parse(data.toString().replace(/(\r\n|\r|\n)/, '\n')))
                                 .to
                                 .deep
-                                .equal(jsonUtil.parseEscaped('{"file":"examples%2Fex2.ts","text":"%0Afunction%20findMe()%7B%0A%20%20%20%20return%0A%7D%0A%0Aimport%20*%20as%20example1%20from%20%22.%2Fex1%22%3B%0A%0A%0AfindMe()%3B"}'));
+                                .equal(jsonUtil.parseEscaped('{"file":"examples%2Fex2.ts","text":"%0Afunction%20findMe()%7B%0A%20%20%20%20return%0A%7D%0A%0Aimport%20*%20as%20example1%20from%20%22.%2Fex1%22%3B%0A%0A%0AfindMe()%3B"}'.replace(/(\r\n|\r|\n)/, '\n')));
                         })
                         .then(done)
                         .catch(done);
