@@ -62,7 +62,6 @@ WriteStream.prototype._write = function (chunk, encoding, callback) {
     let responseCallbackBacklog = (this.store as Array<any>);
     chunkBuffer += chunk.toString();
     if (contentLengths.first() === chunkBuffer.length){
-        console.log('Buffer complete');
         contentLengths = contentLengths.shift();
         // Call the response with correct chunk.
         (responseCallbackBacklog.shift())(null, chunkBuffer)

@@ -56,11 +56,17 @@ global.rootFile = global.rootFile || (() => {throw new Error('rootFile not set')
  */
 import factoryGetFileText from './factoryGetFileText';
 import factoryGetTokenType from './factoryGetTokenType';
+import factoryGetTokenDependencies from './factoryGetTokenDependencies';
 const getFileText = factoryGetFileText({tssServer, winston, readFile: fs.readFile});
 const getTokenType = factoryGetTokenType({
-    open: tssServer.open,
-    quickinfo: tssServer.quickinfo,
+    tssServer,
     winston
+});
+const getTokenDependencies = factoryGetTokenDependencies({
+    tssServer, winston,
+    relative_path: path.relative,
+    scanFileForIdentifierTokens: tss.scanFileForIdentifierTokens,
+    extractTokensFromFile
 });
 
 
@@ -154,76 +160,20 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
 server.get('/api/getTokenDependencies', (req: express.Request, res: express.Response) => {
     winston.log('info', `Query for getTokenDependencies:`, req.query);
 
-    let errFunc = (err: Error) => {
-        winston.log('error', `Error occurred in getTokenDependencies`, err);
-        if (!res.finished){
-            return res.status(500).send('Internal Server Error');
-        }
-        return
-    }
-
     if (sanitiseFileLineOffset(req, res) !== true){
         return
     }
     let filePath = req.query['filePath'],
         line = parseInt(req.query['line']),
         offset = parseInt(req.query['offset']);
-
-    tssServer.open(filePath)
-        .catch(err => {
-            winston.log('error', `Couldn't open file`, err);
-            return res.status(500).send('Internal error');
-        });
-
-    let definitionToken;
-    let definitionFilePath: string;
-
-    tssServer.definition(filePath, line, offset)
-    .then((response: string) => {
-        if (!response.success){
-            res.status(204).send(JSON.stringify(response));
-            throw new Error('success false');
-        }
-        return response;
-    }, errFunc)
-    .then(resp => {
-
-        definitionToken = resp;
-        definitionFilePath = resp.body[0].file
-
-        return tss.scanFileForIdentifierTokens(path.relative(global.tsconfigRootDir, definitionFilePath));
-    }).then(allFileTokens => {
-        let tokenDefinition = definitionToken
-        winston.log('trace', `Slicing dependencies using`, definitionToken, allFileTokens);
-
-        return extractTokensFromFile(allFileTokens,
-                                        tokenDefinition.body[0].start,
-                                        tokenDefinition.body[0].end);
-        
-    }, err => {
-        winston.log('error', `Error selectedDependencies`, err);
-        throw err;
-    })
-    .then(selectTokens => {
-        // This is where we filter by token type.
-        return selectTokens.filter( token => token.type === 'Identifier' );
-    }).then(selectedTokens => {
-        // Here we are adding metadata.
-        let quickInfoList = [];
-        (selectedTokens as any[]).forEach(token => {
-            quickInfoList.push(tssServer.quickinfo(definitionFilePath, token.start.line, token.start.character));
-        });
-        return Promise.all(quickInfoList);
-    }).then(args => {
-        const trimmedArgs = args.map(v => v.body);
-        trimmedArgs.forEach(v => { v['file'] =  path.relative(global.tsconfigRootDir, definitionFilePath) });
-        return trimmedArgs;
-    }).then(args => {
-        res.setHeader('Content-Type', 'application/json');
-        // Remove the first token, as it *most likely* the definition token.
-        return res.status(200).send(JSON.stringify(args.slice(1)));
-    })
-    .catch(errFunc)
+    
+    getTokenDependencies(filePath, line, offset)
+        .then(stringResponse => {
+            res.setHeader('Content-Type', 'application/json');
+            res.status(200).send(stringResponse)
+        })
+        .catch(res.status(500).send)
+    
 });
 
 /**

@@ -14,7 +14,7 @@ import factoryGetFileText from '../factoryGetFileText';
 import factoryGetTokenType from '../factoryGetTokenType';
 
 
-describe.only("Core features", function(){
+describe("Core features", function(){
     this.timeout(10000);
 
     describe("getFileText", function(){
@@ -84,6 +84,12 @@ describe.only("Core features", function(){
                         .to.deep.equal(correctResponse))
                     .then(_ => done())
                     .catch(done);
+        })
+    })
+
+    describe("getTokenDependencies", function(){
+        it("getTokenDependencies", function(){
+
         })
     })
 })

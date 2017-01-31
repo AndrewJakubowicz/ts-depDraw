@@ -156,7 +156,7 @@ describe('Server api:', function () {
 //     let serverProcess : child_process.ChildProcess;
 
 //     before(function (done) {
-//         serverProcess = child_process.spawn('npm', ['start', 'examples/ex2.ts']);
+//         serverProcess = child_process.spawn(/^win/.test(process.platform) ? 'npm.cmd' : 'npm', ['start', 'examples/ex2.ts']);
 
 //         serverProcess
 //             .stdout
@@ -224,7 +224,7 @@ describe('Stablity tests', function() {
     let serverProcess : child_process.ChildProcess;
 
     beforeEach(function (done) {
-        serverProcess = child_process.spawn('npm', ['start', 'examples/ex3.ts']);
+        serverProcess = child_process.spawn(/^win/.test(process.platform) ? 'npm.cmd' : 'npm', ['start', 'examples/ex3.ts']);
 
         serverProcess
             .stdout
@@ -338,11 +338,11 @@ describe('Stablity tests', function() {
 });
 
 describe("Flawed Cases", function () {
-    this.timeout(6000);
+    this.timeout(10000);
     let serverProcess : child_process.ChildProcess;
 
     beforeEach(function (done) {
-        serverProcess = child_process.spawn('npm', ['start', 'examples/ex3.ts']);
+        serverProcess = child_process.spawn(/^win/.test(process.platform) ? 'npm.cmd' : 'npm', ['start', 'examples/ex3.ts']);
 
         serverProcess
             .stdout
