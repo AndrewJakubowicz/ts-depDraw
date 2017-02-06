@@ -22,11 +22,10 @@ const  factoryGetFileText = ({tssServer, winston, readFile}) => filePath =>
                             file: filePath,
                             text: data
                         }
-                        return JSON.stringify(fileTextResponse);
+                        resolve(JSON.stringify(fileTextResponse));
                     });
                },
                err => reject(err))
-        .then(resolve)
         .catch(err => reject(err));
 
     
