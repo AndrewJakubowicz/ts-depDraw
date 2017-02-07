@@ -52,6 +52,9 @@ const factoryGetTokenDependencies = ({tssServer, winston, relative_path, scanFil
                 })
                 .catch(err => {throw new Error("Error in scanFileForIdentifierTokens promise chain: " + err.message)})
         })
+        // Verify the tokens.
+        // Currently just cut out the first token because it refers to self.
+        .then(dependencies => dependencies.slice(1))
         .then(JSON.stringify)
         .then(resolve)  
         .catch(err => {
