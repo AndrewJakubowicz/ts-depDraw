@@ -165,11 +165,17 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
         })
         .catch(res.status(500).send)
 });
-
+/**
+ * This allows people to get information from a token.
+ */
 server.post('/api/getTokenType', (req: express.Request, res: express.Response) => {
     var reqBody = req.body;
     console.log(reqBody);
-    res.json(req.body);
+
+    // First check the TYPE of token.
+
+    // Let's just let them all through for this new api.
+    res.json(reqBody);
 });
 
 
@@ -215,6 +221,14 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
             return res.status(200).send(dependents);
         })
         .catch(res.status(500).send);
+});
+
+server.post('/api/getTokenDependents', (req: express.Request, res: express.Response) => {
+    let reqBody: Object = req.body;
+    winston.log('trace', `api getTokenDependents`);
+    reqBody["success"] = true;
+    res.json([reqBody]);
+    return
 });
 
 
