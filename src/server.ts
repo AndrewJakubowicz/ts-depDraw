@@ -29,6 +29,7 @@ import * as http from 'http';
 import * as express from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+var bodyParser = require('body-parser');
 
 import * as winston from "./appLogger";
 import * as tss from "./tsserverWrap";
@@ -103,6 +104,7 @@ setTimeout(() => {
 // it will fall through to the next handler. We don't know where our app will be
 // located. Hence the path.join
 server.use('/', express.static(path.join(__dirname, '..', 'static')));
+server.use(bodyParser.json());
 
 // This should allow CORS on the server.
 // Thank you: http://enable-cors.org/server_expressjs.html
@@ -164,6 +166,12 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
         .catch(res.status(500).send)
 });
 
+server.post('/api/getTokenType', (req: express.Request, res: express.Response) => {
+    var reqBody = req.body;
+    console.log(reqBody);
+    res.json(req.body);
+});
+
 
 /**
  * getTokenDependencies returns the dependencies of a specified token.
@@ -208,6 +216,8 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
         })
         .catch(res.status(500).send);
 });
+
+
 
 /**
  * Helper function for making sure that query contains filePath, line and offset properties.
