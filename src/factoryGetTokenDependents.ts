@@ -132,11 +132,12 @@ function factoryTraverseNavTreeToken({winston, relative_path}) {
 
 /**
  * tokenInRange returns boolean representing if token is within scope.
- * TODO: refine this filter.
  */
 function tokenInRange({winston}, start, end, tokenStart){
-    winston.log('trace', `tokenInRange`, start.line <= tokenStart && end.line >= tokenStart)
-    return start.line <= tokenStart.line && end.line >= tokenStart.line
+    winston.log('trace', `tokenInRange`, start.line <= tokenStart && end.line >= tokenStart, start, tokenStart)
+    return     (start.line === tokenStart.line && start.offset < tokenStart.offset)
+            || (end.line === tokenStart.line && end.offset > tokenStart.offset)
+            || (start.line < tokenStart.line && end.line > tokenStart.line)
 }
 
 export default factoryGetTokenDependents;
