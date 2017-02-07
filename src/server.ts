@@ -225,10 +225,19 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
 
 server.post('/api/getTokenDependents', (req: express.Request, res: express.Response) => {
     let reqBody: Object = req.body;
-    winston.log('trace', `api getTokenDependents`);
+
+    // Preventing the handling of modules.
+    if (reqBody.hasOwnProperty('kind') && reqBody["kind"] === "module"){
+        return res.json([]);
+    }
+    winston.log('trace', `api getTokenDependents`, reqBody);
     reqBody["success"] = true;
-    res.json([reqBody]);
-    return
+    getTokenDependents(reqBody.file, reqBody.start.line, reqBody.start.offset)
+        .then(dependents => {
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(200).send(dependents);
+        })
+        .catch(res.status(500).send);
 });
 
 
