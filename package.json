@@ -11,7 +11,8 @@
   "scripts": {
     "test": "mocha lib/tests --recursive --watch",
     "build": "tsc",
-    "start": "node ./bin/ts-depDraw"
+    "start": "node ./bin/ts-depDraw",
+    "dev": "node --debug=5035 ./bin/ts-depDraw"
   },
   "repository": {
     "type": "git",

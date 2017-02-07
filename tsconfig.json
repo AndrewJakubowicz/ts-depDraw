@@ -3,8 +3,9 @@
         "module": "commonjs",
         "target": "es5",
         "noImplicitAny": false,
-        "sourceMap": false,
+        "inlineSourceMap": true,
         "outDir": "lib",
+        "sourceRoot": "src",
         "lib": [
             "dom",
             "es5",

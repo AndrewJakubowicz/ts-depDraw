@@ -15,8 +15,12 @@ const factoryExtractTokensFromFile = ({winston}) =>
  * tokenInRange returns boolean representing if token is within scope.
  */
 function tokenInRange(start, end, tokenStart){
-    return     (start.line === tokenStart.line && start.offset >= tokenStart.character)
-            || (end.line === tokenStart.line && end.offset <= tokenStart.character)
+    if (!(start.line && start.offset && tokenStart.line && tokenStart.character)){
+        new Error("start.line && start.offset && tokenStart.line && tokenStart.character must be set");
+    }
+    
+    return     (start.line === tokenStart.line && start.offset < tokenStart.character)
+            || (end.line === tokenStart.line && end.offset > tokenStart.character)
             || (start.line < tokenStart.line && end.line > tokenStart.line)
 }
 
