@@ -221,7 +221,10 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
             res.setHeader('Content-Type', 'application/json');
             return res.status(200).send(dependents);
         })
-        .catch(res.status(500).send);
+        .catch(err => {
+            winston.log('trace', `getTokenDependents caught in server but failed with ${err}`);
+            res.status(500).send(err);
+        });
 });
 
 server.post('/api/getTokenDependents', (req: express.Request, res: express.Response) => {

@@ -25,24 +25,24 @@ const factoryGetTokenDependents = ({tssServer,
             return (references as any[]).filter( refToken => !refToken.isDefinition );
         })
         .then(filteredList => {
-            // Here we need to collect a list of unique file paths.
-            winston.log('trace', `filtered referenceObject: `, filteredList);
-            let filePaths: Set<string> = new Set(); // Sets are iterated over in insertion order.
-            let relativePath: string;
+            // UNIQUE FILE PATHS WERE FAILING BECAUSE LATER WE REQUIRE A 1 to 1 LINK.
 
-            (filteredList as any[]).forEach(token => {
-                relativePath = relative_path(global.tsconfigRootDir, token.file);
-                filePaths.has(relativePath) || filePaths.add(relativePath);
-            });
+            // winston.log('trace', `filtered referenceObject: `, filteredList);
+            // let filePaths: Set<string> = new Set(); // Sets are iterated over in insertion order.
+            // let relativePath: string;
+
+            // (filteredList as any[]).forEach(token => {
+            //     relativePath = relative_path(global.tsconfigRootDir, token.file);
+            //     filePaths.has(relativePath) || filePaths.add(relativePath);
+            // });
 
             let navtreePromises = [];
-            filePaths.forEach(relativeFilePath => {
-                tssServer.open(relativeFilePath)
+            filteredList.forEach(({file}) => {
+                tssServer.open(file)
                     .catch(err => {throw new Error("Opening relative file path failed")})
                 
-                navtreePromises.push(tssServer.navtree(relativeFilePath))
+                navtreePromises.push(tssServer.navtree(file))
             });
-
             // This promise is all the unique navtrees.
             return Promise.all([...navtreePromises, filteredList]);
         })
@@ -53,7 +53,11 @@ const factoryGetTokenDependents = ({tssServer,
 
             let scopesAffectedByReference = [];
             winston.log('trace', `reflength and navTrees length`, references.length, navTrees.length);
+            if (references.length !== navTrees.length){
+                winston.log('warn', `Losing data because lengths aren't equal! ${references.length} !== ${navTrees.length}`);
+            }
             references.forEach((tokenRef, i) => {
+
                 winston.log('trace', `Dispatching traverseNavTreeToken on `, navTrees[i].body, `and token reference`, tokenRef);
                 let _tempDependents = traverseNavTreeToken(navTrees[i].body, tokenRef);
                 winston.log('trace', '_tempDependents:', _tempDependents, 'for token:', tokenRef);
@@ -87,12 +91,17 @@ const factoryGetTokenDependents = ({tssServer,
                             }
                         }
                     })
+                    .catch(err => { throw new Error(`Error in scanFileForIdentifierTokens promise chain: ${err}`)})
             })
             return Promise.all(newTokens);
+        },
+        err => {
+            winston.log('error', `Error traversing nav tree: ${err}`)
+            reject(`Error traversing nav tree: ${err}`);
         })
         .then(JSON.stringify)
         .then(resolve)
-        .catch(reject);
+        .catch(err => {reject(`Error in GetTokenDependents: ${err}`)});
     })
 
 
