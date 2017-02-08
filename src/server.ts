@@ -170,8 +170,9 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
  */
 server.post('/api/getTokenType', (req: express.Request, res: express.Response) => {
     var reqBody = req.body;
-    console.log(reqBody);
-
+    if (!reqBody){
+        return res.status(400).send();
+    }
     // First check the TYPE of token.
 
     // Let's just let them all through for this new api.
@@ -225,7 +226,9 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
 
 server.post('/api/getTokenDependents', (req: express.Request, res: express.Response) => {
     let reqBody: Object = req.body;
-
+    if (!reqBody){
+        return res.status(400).send();
+    }
     // Preventing the handling of modules.
     if (reqBody.hasOwnProperty('kind') && reqBody["kind"] === "module"){
         return res.json([]);
