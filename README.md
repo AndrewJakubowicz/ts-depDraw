@@ -93,6 +93,10 @@ references: []
  - [x] Create frontend repo.
  - [ ] Use opn to open browser.
  - [ ] Fix tests so that things are legit.
+ - [ ] Share diagram
+ - [ ] Able to add text nodes
+ - [ ] Fix edge between the same node.
+ - [ ] Discuss regarding adding nodes by token or by definition.
 
 
  # Known Bugs
@@ -102,3 +106,4 @@ references: []
  - [x] Duplicated dependents for some tokens.
  - [x] tsserver chunks responses which can break JSON parse.
  - [ ] Template literal strings don't tokenize properly.
+ - [ ] ex5.ts line 1, offset 13 - causes error
