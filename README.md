@@ -95,15 +95,16 @@ references: []
  - [ ] Fix tests so that things are legit.
  - [ ] Share diagram
  - [ ] Able to add text nodes
- - [ ] Fix edge between the same node.
+ - [x] Fix edge between the same node.
  - [ ] Discuss regarding adding nodes by token or by definition.
+ - [x] All edges added between nodes
 
 
  # Known Bugs
 
  - [ ] Dependencies are anything in scope. Regardless if they are actual dependencies.
- - [ ] Function declaration headers are listed as dependencies.
+ - [x] Function declaration headers are listed as dependencies.
  - [x] Duplicated dependents for some tokens.
  - [x] tsserver chunks responses which can break JSON parse.
  - [ ] Template literal strings don't tokenize properly.
- - [ ] ex5.ts line 1, offset 13 - causes error
+ - [x] ex5.ts line 1, offset 13 - causes error
