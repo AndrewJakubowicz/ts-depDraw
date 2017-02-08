@@ -99,6 +99,37 @@ const factoryGetTokenDependents = ({tssServer,
             winston.log('error', `Error traversing nav tree: ${err}`)
             reject(`Error traversing nav tree: ${err}`);
         })
+        .then(dependentsList => {
+            /**
+             * Here we want to scrape out the duplicates.
+             * This is done by hashing each token with a minimalistic hash,
+             * and then removing any duplicates.
+             */
+
+            /**
+             * Use to get a unique string for each node.
+             */
+            const hashNodeToString = node =>
+                Object.keys(node).map(key => {
+                    switch(key){
+                        case "start":
+                        case "end":
+                            return hashNodeToString(node[key])
+                        case "file":
+                        case "line":
+                        case "offset":
+                            return String(node[key])
+                        default:
+                            return "";
+                    }
+                }).filter(v => v.length !== 0).join("|");
+            
+            let hashSet = new Set();
+            let filteredList = dependentsList.filter(token => {
+                return !hashSet.has(hashNodeToString(token)) && hashSet.add(hashNodeToString(token))
+            });
+            return filteredList;
+        })
         .then(JSON.stringify)
         .then(resolve)
         .catch(err => {reject(`Error in GetTokenDependents: ${err}`)});
@@ -150,3 +181,5 @@ function tokenInRange({winston}, start, end, tokenStart){
 }
 
 export default factoryGetTokenDependents;
+
+
