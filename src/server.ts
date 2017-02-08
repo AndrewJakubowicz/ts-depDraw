@@ -151,7 +151,7 @@ server.get('/api/getTokenType', (req: express.Request, res: express.Response) =>
     winston.log('info', `Query for getTokenType:`, req.query);
     
     if (sanitiseFileLineOffset(req, res) !== true){
-        return
+        return res.status(400).send();
     }
 
     let filePath = req.query['filePath'],
@@ -187,7 +187,7 @@ server.get('/api/getTokenDependencies', (req: express.Request, res: express.Resp
     winston.log('info', `Query for getTokenDependencies:`, req.query);
 
     if (sanitiseFileLineOffset(req, res) !== true){
-        return
+        return res.status(400).send();
     }
     let filePath = req.query['filePath'],
         line = parseInt(req.query['line']),
@@ -210,7 +210,7 @@ server.get('/api/getTokenDependents', (req: express.Request, res: express.Respon
     winston.log('info', `Query for getTokenDependents:`, req.query);
 
     if (sanitiseFileLineOffset(req, res) !== true){
-        return
+        return res.status(400).send();
     }
     let filePath = req.query['filePath'],
         line = parseInt(req.query['line']),
