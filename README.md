@@ -45,12 +45,10 @@ Usage:
 ```
 
 
+This will start the server that traverses your project.
+However to start up the frontend you'll need to clone [this repo](https://github.com/SpyR1014/ts-depDraw-front).
 
-
-Visualisation of typescript project dependencies.
-
-
-
+`npm install` and `npm start` the other repo to access the visualisation of your code.
 
 
 
