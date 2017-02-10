@@ -1,5 +1,32 @@
 # ts-depDraw
 
+# Aim
+
+Prototype a novel way to interact and explore your projects dependencies.
+
+# Introduction
+
+Typescript was chosen as the language due to the language services that they provide.
+Due to the opt-in nature of Typescript, dependencies / dependents may be missed if the compiler doesn't recognise them.
+
+The dynamic nature of JavaScript makes discovering some dependency cases very difficult (when looking at token by token cases).
+This is further compounded by what can be discovered using the Typescript language services.
+
+However the scope of the project isn't to work out the best way to draw these dependencies,
+but also a novel way to explore your project using the dragonfly view.
+The Dragonfly view allows you to traverse your dependencies while keeping a history of your path.
+If you want to further visualise your path, it is then drawn into a network view, where
+all the tokens are checked for dependencies between one another.
+
+This helps reveal any hidden dependencies that you might not have seen.
+
+Finally if there is an issue or something that you want to highlight,
+the diagram is savable and thus shared with others (__without needing to share your project files__).
+
+
+
+# Installation
+
 
 Install with `npm install ts-depDraw -D`.
 
@@ -23,7 +50,6 @@ Usage:
 Visualisation of typescript project dependencies.
 
 
-The idea of this project is to create a dependency graph of your project.
 
 
 
