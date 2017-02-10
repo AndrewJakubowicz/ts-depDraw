@@ -38,9 +38,10 @@ import * as jsonUtil from './util/jsonUtil';
 import factoryExtractTokensFromFile from './util/factoryExtractTokensFromFile';
 const extractTokensFromFile = factoryExtractTokensFromFile({winston});
 
+const opn = require('opn');
 
-
-
+// TODO: make port change-able
+opn(`http://localhost:8080`);
 
 
 
