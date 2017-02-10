@@ -82,6 +82,10 @@ references: []
  - [ ] Able to add text nodes
  - [x] Fix edge between the same node.
  - [x] All edges added between nodes
+ - [ ] Add projectless server to allow loading of other projects.
+ - [ ] Integrate front end with backend.
+ - [ ] Refactor end points in front end to be easily changed.
+ - [ ] Refactor end points in back end to be easily changed.
 
 
  # Known Bugs
