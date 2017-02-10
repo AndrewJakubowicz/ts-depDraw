@@ -76,7 +76,6 @@ references: []
  - [x] Get rough dependencies for a token.
  - [x] Get rough dependents for a token.
  - [x] Create frontend repo.
- - [ ] Use opn to open browser.
  - [ ] Fix tests so that things are legit.
  - [x] Share/[Save/Load] diagram
  - [ ] Able to add text nodes
@@ -86,6 +85,7 @@ references: []
  - [ ] Integrate front end with backend.
  - [ ] Refactor end points in front end to be easily changed.
  - [ ] Refactor end points in back end to be easily changed.
+ - [ ] Use opn to open browser.
 
 
  # Known Bugs
