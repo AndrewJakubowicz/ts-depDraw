@@ -28,7 +28,8 @@ the diagram is savable and thus shared with others (__without needing to share y
 # Installation
 
 
-Install with `npm install ts-depDraw -D`.
+Install with `npm install -g ts-depdraw`.
+
 
 Usage:
 
@@ -46,26 +47,34 @@ Usage:
 
 
 This will start the server that traverses your project.
-However to start up the frontend you'll need to clone [this repo](https://github.com/SpyR1014/ts-depDraw-front).
 
-`npm install` and `npm start` the other repo to access the visualisation of your code.
+Example initiation:
+
+`ts-depDraw src/app.ts`
 
 
 
-## Token data
+## Contribution to frontend
 
-tokenText: string
+I need help making it look better, and cleaning up the code.
 
-tokenType: string
+If you're interested in expanding this prototype contact me!
 
-isDefinition: bool
+To work on the frontend you'll need to clone [this frontend repo](https://github.com/SpyR1014/ts-depDraw-front).
 
-start: {line: number, offset: number}
+## Contribution to backend
 
-end?: {line: number, offset: number}
+Clone this repo.
 
-references: []
+`npm install`
 
+To run:
+
+`npm start <filePath>` is the same as `ts-depDraw <filePath>`
+
+### Testing
+
+`npm test`
 
 # Task list
 
@@ -95,3 +104,8 @@ references: []
  - [x] tsserver chunks responses which can break JSON parse.
  - [ ] Template literal strings don't tokenize properly.
  - [x] ex5.ts line 1, offset 13 - causes error
+ - [ ] Sometimes parameters infinitely nest in the definition dragonfly list.
+ - [ ] Large files crash the server when buffering the tsserver responses is required.
+
+
+# 
