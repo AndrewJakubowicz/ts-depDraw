@@ -2,3 +2,7 @@
 line.line {
   marker-end: url(#end-arrow);
 }
+
+#graph {
+  text-align: center;
+}
