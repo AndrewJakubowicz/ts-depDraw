@@ -72,6 +72,12 @@ const factoryGetTokenDependents = ({tssServer,
             const newTokens = (scopesAffectedByReference as any).map(token => {
                 // Huge overhead here, find first identifier token of the scope given.
                 // We need to add exceptions (like modules, and maybe more?...)
+                if (token.kind === "script"){
+                    return {
+                        ...token,
+                        displayString: token.file
+                    }
+                }
                 return scanFileForIdentifierTokens(token.file)
                     .then(allFileTokens => {
                         const filteredTokens = extractTokensFromFile(allFileTokens, token.spans.start, token.spans.end)

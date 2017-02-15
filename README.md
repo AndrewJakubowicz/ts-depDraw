@@ -29,9 +29,10 @@ the diagram is savable and thus shared with others (__without needing to share y
 
 
 Install with `npm install -g ts-depdraw`.
+![using npm to install ts-depdraw](http://i.imgur.com/MJX7N1a.gif)
 
 
-Usage:
+# Start Server:
 
 ```
     Usage: ts-depDraw <file path>
@@ -46,13 +47,62 @@ Usage:
 ```
 
 
+
 This will start the server that traverses your project.
 
-Example initiation:
+## Example initiation:
+
+If you have a project with the structure:
+
+```
+.
+├── src
+│   └── app.ts
+└── tsconfig.json
+```
+
+You must start the server from the folder with the `tsconfig.json`
+and with the filepath of a `.ts` file.
+
+In this case we'll start the server on `app.ts`.
 
 `ts-depDraw src/app.ts`
 
 
+# Exploring your code
+
+Let's explore a simple single file example (multiple files are supported).
+
+Continuing on from the above example, imagine `app.ts` has the following code:
+
+```
+function A(){
+    return "Hello";
+}
+
+function B(){
+    return A() + "World!"
+}
+```
+
+When the server starts it will open the browser to `http://localhost:8080/` and you'll be greeted by the following screen:
+
+![Welcome screen](http://i.imgur.com/4ifDG4v.png)
+
+If you've got a saved diagram, you can load it, otherwise just press __continue__.
+
+## UI
+
+![Blank UI](http://i.imgur.com/m6z1At4.png)
+
+Notice your code appears at the bottom.
+The blank space is where the diagram will be created.
+
+As you explore, additional files may be traversed and they'll be added next to the current one (`src/app.ts`).
+
+In this case we want to check what dependencies function `B` has.
+
+After selecting B we get an interesting pop-up.
 
 ## Contribution to frontend
 
