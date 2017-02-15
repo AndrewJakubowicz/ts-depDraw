@@ -102,13 +102,39 @@ As you explore, additional files may be traversed and they'll be added next to t
 
 In this case we want to check what dependencies function `B` has.
 
-After selecting B we get an interesting pop-up.
+![dragonfly popup](http://i.imgur.com/bihN3ji.gif)
+
+Instead of just clicking tokens, we can also click the dependencies and dependents in the __dragonfly popup__.
+
+This will build up a path (or dragonfly tail) of the tokens you've traversed.
+
+![Building Dragonfly tail](http://i.imgur.com/bihN3ji.gif)
+
+__Clicking__ the dragonfly's tail or path will commit them to the diagram.
+When nodes are added to the diagram, all dependencies between the committed nodes are added.
+
+> This allows you to discover hidden dependencies between tokens.
+
+In this example we click on the functions in the order `A() -> B() -> C()`,
+and the dependency between `C` and `A` is picked up.
+
+![Commiting](http://i.imgur.com/ki4UAMu.gif)
+
+## Finding nodes in code
+
+Just click on the node in the diagram to be taken to the token in the code.
+
+## Removing a node
+
+Double click on a node to remove it from the diagram.
+
+
+# Contribution
+
+I need help making it presentable.
+If this idea excites you, please contact me on [twitter](https://twitter.com/spyr1014).
 
 ## Contribution to frontend
-
-I need help making it look better, and cleaning up the code.
-
-If you're interested in expanding this prototype contact me!
 
 To work on the frontend you'll need to clone [this frontend repo](https://github.com/SpyR1014/ts-depDraw-front).
 
