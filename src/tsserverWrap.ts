@@ -96,7 +96,7 @@ export class TsserverWrapper {
         this.tsserverProcess.stdout.pipe(splitStream).pipe(writingStream);
 
         this.tsserverProcess.stderr.on('data', d => {
-            winston.log('error', 'tsserverProcess error:', d.toString());
+            winston.log('error', `tsserverProcess error: ${d.toString()}`);
         });
     }
 
