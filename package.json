@@ -1,6 +1,6 @@
 {
   "name": "ts-depdraw",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Visualisation of typescript project dependencies.",
   "main": "lib/main.js",
   "directories": {
