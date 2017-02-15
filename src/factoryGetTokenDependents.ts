@@ -69,15 +69,21 @@ const factoryGetTokenDependents = ({tssServer,
         .then(scopesAffectedByReference => {
 
             // Find the reference identifier.
-            const newTokens = (scopesAffectedByReference as any).map(token => {
+            const newTokens = (scopesAffectedByReference as any)
+                                .filter(token => token.kind === "script")
+                                .map(token => {
                 // Huge overhead here, find first identifier token of the scope given.
                 // We need to add exceptions (like modules, and maybe more?...)
-                if (token.kind === "script"){
-                    return {
-                        ...token,
-                        displayString: token.file
-                    }
-                }
+                // if (token.kind === "script"){
+                //     return {
+                //         ...token,
+                //         displayString : '<global>',
+                //         documentation : "",
+                //         end: token.spans.end,
+                //         file: "examples/ex7_deepNesting.ts",
+                //         start: token.spans.start
+                //     }
+                // }
                 return scanFileForIdentifierTokens(token.file)
                     .then(allFileTokens => {
                         const filteredTokens = extractTokensFromFile(allFileTokens, token.spans.start, token.spans.end)
