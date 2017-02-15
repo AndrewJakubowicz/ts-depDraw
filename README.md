@@ -108,7 +108,7 @@ Instead of just clicking tokens, we can also click the dependencies and dependen
 
 This will build up a path (or dragonfly tail) of the tokens you've traversed.
 
-![Building Dragonfly tail](http://i.imgur.com/bihN3ji.gif)
+![Building Dragonfly tail](http://i.imgur.com/CnFxZIZ.gif)
 
 __Clicking__ the dragonfly's tail or path will commit them to the diagram.
 When nodes are added to the diagram, all dependencies between the committed nodes are added.
