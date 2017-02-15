@@ -67,10 +67,9 @@ const factoryGetTokenDependents = ({tssServer,
             return scopesAffectedByReference
         })
         .then(scopesAffectedByReference => {
-
             // Find the reference identifier.
             const newTokens = (scopesAffectedByReference as any)
-                                .filter(token => token.kind === "script")
+                                .filter(token => token.kind !== "script")
                                 .map(token => {
                 // Huge overhead here, find first identifier token of the scope given.
                 // We need to add exceptions (like modules, and maybe more?...)
