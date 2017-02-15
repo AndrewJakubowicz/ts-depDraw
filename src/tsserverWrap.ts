@@ -12,6 +12,8 @@ import * as fs from "fs";
 import * as ts from "TypeScript";
 import * as assert from 'assert';
 
+var appRoot = require('app-root-path').path;
+
 import * as child_process from "child_process";
 
 import * as winston from "./appLogger";
@@ -80,9 +82,9 @@ export class TsserverWrapper {
     private responseCallbackStore = [];
 
     constructor() {
-
+        console.log('root = ', appRoot)
         const args = [
-            "node_modules/typescript/bin/tsserver"
+            appRoot + "/node_modules/typescript/bin/tsserver"
         ];
 
         this.tsserverProcess = child_process.spawn("node", args);

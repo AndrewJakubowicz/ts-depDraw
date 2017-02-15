@@ -40,6 +40,7 @@
     "sinon": "^1.17.6"
   },
   "dependencies": {
+    "app-root-path": "^2.0.1",
     "body-parser": "^1.16.0",
     "express": "^4.14.0",
     "immutable": "^3.8.1",
