@@ -1,5 +1,7 @@
 # ts-depDraw
 
+![Catching a hidden dependency!](http://i.imgur.com/QomKSln.gif)
+
 # Aim
 
 Prototype a novel way to interact and explore your projects dependencies.
