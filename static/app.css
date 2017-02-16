@@ -6,3 +6,7 @@ line.line {
 #graph {
   text-align: center;
 }
+
+svg {
+  border: 1px solid grey;
+}
