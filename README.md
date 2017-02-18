@@ -167,10 +167,12 @@ To run:
  - [x] Fix edge between the same node.
  - [x] All edges added between nodes
  - [ ] Add projectless server to allow loading of other projects.
- - [ ] Integrate front end with backend.
- - [ ] Refactor end points in front end to be easily changed.
+ - [x] Integrate front end with backend.
+ - [x] Refactor end points in front end to be easily changed.
  - [ ] Refactor end points in back end to be easily changed.
- - [ ] Use opn to open browser.
+ - [x] Use opn to open browser.
+ - [ ] Create completely unique user ID's for sessions (and logging)
+ - [ ] Set up logging server.
 
 
  # Known Bugs
