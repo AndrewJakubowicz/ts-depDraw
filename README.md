@@ -172,7 +172,9 @@ To run:
  - [ ] Refactor end points in back end to be easily changed.
  - [x] Use opn to open browser.
  - [ ] Create completely unique user ID's for sessions (and logging)
- - [ ] Set up logging server.
+ - [x] Set up logging server.
+ - [ ] Set up database.
+ - [ ] Log to the server.
 
 
  # Known Bugs
