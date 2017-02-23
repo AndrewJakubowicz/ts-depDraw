@@ -154,6 +154,13 @@ To run:
 
 `npm test`
 
+
+# High level architecture
+
+![High level cloud architecture of ts-depdraw](http://i.imgur.com/6x2Y3jr.png)
+
+
+
 # Task list
 
  - [x] Get text from file.
